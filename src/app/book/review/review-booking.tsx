@@ -113,6 +113,18 @@ export function ReviewBooking({
     setCheckoutError("");
   }
 
+  function addMoreItems() {
+    const draft = readBookingDraft();
+    sessionStorage.setItem(
+      "aura-booking-draft",
+      JSON.stringify({
+        ...draft,
+        customer: draft.customer,
+      }),
+    );
+    router.push("/book");
+  }
+
   async function startCheckout() {
     if (!paymentMethod) {
       return;
@@ -350,6 +362,13 @@ export function ReviewBooking({
           <ArrowLeft aria-hidden="true" className="size-4" />
           Back to details
         </Link>
+        <button
+          className="mt-3 flex w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f3e9e4]"
+          onClick={addMoreItems}
+          type="button"
+        >
+          Add more items to this order
+        </button>
       </aside>
     </div>
   );

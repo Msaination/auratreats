@@ -82,6 +82,26 @@ export function DetailsForm({
     getServerBookingDraftSnapshot,
   );
   const storedDraft = serializedDraft ? readBookingDraft() : null;
+  const addonServices = Array.isArray(storedDraft?.addonServices)
+    ? (storedDraft.addonServices as Array<Record<string, unknown>>)
+    : [];
+  const primaryServiceId = Number(
+    storedDraft?.primaryServiceId ?? storedDraft?.serviceId ?? catalog.service.id,
+  );
+  const primaryServiceName = String(
+    storedDraft?.primaryServiceName ?? storedDraft?.serviceName ?? catalog.service.name,
+  );
+  const primaryDurationMinutes = Number(
+    storedDraft?.primaryDurationMinutes ??
+      storedDraft?.durationMinutes ??
+      catalog.duration,
+  );
+  const totalDurationMinutes = Number(
+    storedDraft?.totalDurationMinutes ?? primaryDurationMinutes,
+  );
+  const totalPrice = Number(
+    storedDraft?.totalPrice ?? storedDraft?.price ?? 0,
+  );
   const storedCustomer =
     storedDraft?.customer &&
     typeof storedDraft.customer === "object" &&
@@ -90,9 +110,9 @@ export function DetailsForm({
       : {};
   const appointmentDate = catalog.dates[0].date;
   const dateTimeParams = new URLSearchParams({
-    serviceId: String(catalog.service.id),
+    serviceId: String(primaryServiceId),
     therapistId: String(catalog.therapist.id),
-    duration: String(catalog.duration),
+    duration: String(primaryDurationMinutes),
     startDate: appointmentDate,
   });
 
@@ -103,14 +123,39 @@ export function DetailsForm({
       fields.map((field) => [field.name, String(formData.get(field.name) ?? "").trim()]),
     );
     const draft = readBookingDraft();
+    const storedAddonServices = Array.isArray(draft.addonServices)
+      ? (draft.addonServices as Array<Record<string, unknown>>)
+      : [];
+    const primaryServiceIdFromDraft = Number(
+      draft.primaryServiceId ?? draft.serviceId ?? catalog.service.id,
+    );
+    const primaryServiceNameFromDraft = String(
+      draft.primaryServiceName ?? draft.serviceName ?? catalog.service.name,
+    );
+    const primaryDurationMinutesFromDraft = Number(
+      draft.primaryDurationMinutes ?? draft.durationMinutes ?? catalog.duration,
+    );
+    const totalDurationMinutesFromDraft = Number(
+      draft.totalDurationMinutes ?? primaryDurationMinutesFromDraft,
+    );
+    const totalPriceFromDraft = Number(
+      draft.totalPrice ?? draft.price ?? 0,
+    );
 
     sessionStorage.setItem(
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
-        serviceId: catalog.service.id,
-        serviceName: catalog.service.name,
-        durationMinutes: catalog.duration,
+        primaryServiceId: primaryServiceIdFromDraft,
+        primaryServiceName: primaryServiceNameFromDraft,
+        primaryDurationMinutes: primaryDurationMinutesFromDraft,
+        addonServices: storedAddonServices,
+        totalDurationMinutes: totalDurationMinutesFromDraft,
+        totalPrice: totalPriceFromDraft,
+        serviceId: primaryServiceIdFromDraft,
+        serviceName: primaryServiceNameFromDraft,
+        durationMinutes: primaryDurationMinutesFromDraft,
+        price: totalPriceFromDraft,
         therapistId: catalog.therapist.id,
         therapistName: catalog.therapist.name,
         startDate: appointmentDate,
@@ -122,9 +167,9 @@ export function DetailsForm({
     );
 
     const reviewParams = new URLSearchParams({
-      serviceId: String(catalog.service.id),
+      serviceId: String(primaryServiceIdFromDraft),
       therapistId: String(catalog.therapist.id),
-      duration: String(catalog.duration),
+      duration: String(primaryDurationMinutesFromDraft),
       startDate: appointmentDate,
       startMinutes: String(slot.startMinutes),
     });
@@ -217,15 +262,39 @@ export function DetailsForm({
         <dl className="mt-5 space-y-4">
           <div className="border-b border-[#d9cec8] pb-4">
             <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
-              Treatment
+              Primary treatment
             </dt>
             <dd className="mt-1 font-serif text-2xl text-[#352d2a]">
-              {catalog.service.name}
+              {primaryServiceName}
             </dd>
             <dd className="mt-1 text-sm text-[#746760]">
-              {catalog.duration} minutes
+              {primaryDurationMinutes} minutes
             </dd>
           </div>
+
+          {addonServices.length ? (
+            <div className="border-b border-[#d9cec8] pb-4">
+              <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
+                Optional add-ons
+              </dt>
+              <dd className="mt-2 space-y-2">
+                {addonServices.map((item) => (
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/50 px-3 py-2 text-sm"
+                    key={String(item.serviceId ?? item.id ?? item.name ?? Math.random())}
+                  >
+                    <span className="font-medium text-[#493d38]">
+                      {String(item.serviceName ?? item.name ?? "Add-on")}
+                    </span>
+                    <span className="text-[#746760]">
+                      {Number(item.durationMinutes ?? 0)} min
+                    </span>
+                  </div>
+                ))}
+              </dd>
+            </div>
+          ) : null}
+
           <div>
             <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
               Therapist
@@ -234,6 +303,23 @@ export function DetailsForm({
               {catalog.therapist.name}
             </dd>
           </div>
+
+          <div className="rounded-[1rem] border border-[#d9cec8] bg-white/60 p-3">
+            <div className="flex items-center justify-between text-sm text-[#746760]">
+              <span>Bundle total</span>
+              <span>{totalDurationMinutes} min</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between font-serif text-xl text-[#352d2a]">
+              <span>Total</span>
+              <span>
+                {new Intl.NumberFormat("en-ZA", {
+                  style: "currency",
+                  currency: "ZAR",
+                }).format(totalPrice)}
+              </span>
+            </div>
+          </div>
+
           <div>
             <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
               Date &amp; time

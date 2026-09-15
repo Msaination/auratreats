@@ -17,14 +17,18 @@ import { useEffect, useSyncExternalStore } from "react";
 type Confirmation = {
   code: string;
   serviceName: string;
+  primaryServiceName?: string;
   therapistName: string;
   date: string;
   startMinutes: number;
   endMinutes: number;
   duration: number;
+  totalDurationMinutes?: number;
   status: string;
   paymentMethod: string;
   total: string;
+  totalPrice?: number;
+  addonServices?: Array<Record<string, unknown>>;
   calendarQr: string;
   calendarDataUri: string;
 };
@@ -85,6 +89,21 @@ export function BookingConfirmation() {
     getServerSnapshot,
   );
   const confirmation = parseConfirmation(serializedConfirmation);
+  const primaryServiceName =
+    confirmation?.primaryServiceName ?? confirmation?.serviceName ?? "Treatment";
+  const addonServices = Array.isArray(confirmation?.addonServices)
+    ? (confirmation.addonServices as Array<Record<string, unknown>>)
+    : [];
+  const totalDurationMinutes = Number(
+    confirmation?.totalDurationMinutes ?? confirmation?.duration ?? 0,
+  );
+  const totalAmount =
+    typeof confirmation?.total === "string" && confirmation.total.trim().length > 0
+      ? confirmation.total
+      : new Intl.NumberFormat("en-ZA", {
+          style: "currency",
+          currency: "ZAR",
+        }).format(Number(confirmation?.totalPrice ?? 0));
 
   function closeConfirmation() {
     sessionStorage.removeItem("aura-booking-confirmation");
@@ -156,14 +175,39 @@ export function BookingConfirmation() {
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_19rem]">
           <div className="grid content-start gap-6 px-6 py-8 sm:grid-cols-2 sm:px-10 sm:py-10">
-            <div className="flex gap-3">
+            <div className="flex gap-3 sm:col-span-2">
               <ReceiptText aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[#8a756c]" />
               <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Treatment</p>
-                <p className="mt-1 font-semibold text-[#493d38]">{confirmation.serviceName}</p>
-                <p className="mt-1 text-sm text-[#746760]">{confirmation.duration} minutes</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Primary treatment</p>
+                <p className="mt-1 font-semibold text-[#493d38]">{primaryServiceName}</p>
+                <p className="mt-1 text-sm text-[#746760]">{totalDurationMinutes} minutes</p>
               </div>
             </div>
+
+            {addonServices.length ? (
+              <div className="flex gap-3 sm:col-span-2">
+                <ReceiptText aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[#8a756c]" />
+                <div className="flex-1">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Optional add-ons</p>
+                  <div className="mt-2 space-y-2">
+                    {addonServices.map((item) => (
+                      <div
+                        className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/60 px-3 py-2 text-sm"
+                        key={String(item.serviceId ?? item.id ?? item.name ?? Math.random())}
+                      >
+                        <span className="font-medium text-[#493d38]">
+                          {String(item.serviceName ?? item.name ?? "Add-on")}
+                        </span>
+                        <span className="text-[#746760]">
+                          {Number(item.durationMinutes ?? 0)} min
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex gap-3">
               <UserRound aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-[#8a756c]" />
               <div>
@@ -192,7 +236,7 @@ export function BookingConfirmation() {
               <div>
                 <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Payment</p>
                 <p className="mt-1 font-semibold text-[#493d38]">
-                  {confirmation.paymentMethod} · {confirmation.total}
+                  {confirmation.paymentMethod} · {totalAmount}
                 </p>
               </div>
             </div>
@@ -210,6 +254,16 @@ export function BookingConfirmation() {
                 width={176}
               />
             ) : null}
+            <div className="mt-4 rounded-[1rem] border border-[#d9cec8] bg-white/70 p-3 text-left">
+              <div className="flex items-center justify-between text-sm text-[#746760]">
+                <span>Bundle total</span>
+                <span>{totalDurationMinutes} min</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between font-serif text-xl text-[#352d2a]">
+                <span>Total</span>
+                <span>{totalAmount}</span>
+              </div>
+            </div>
             <a
               className="mt-5 inline-flex h-11 items-center justify-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f8f4f1]"
               download={`aura-spa-${confirmation.code}.ics`}

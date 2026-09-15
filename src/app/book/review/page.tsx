@@ -86,18 +86,18 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
       <nav aria-label="Booking progress" className="border-b border-[#d9cec8]">
         <ol className="mx-auto flex max-w-7xl gap-8 overflow-x-auto px-5 py-4 text-xs font-semibold uppercase tracking-[0.16em] sm:px-8">
           <li className="shrink-0 text-[#806b62]">
-            <Link href="/book">01 Services</Link>
+            <Link href="/book">01 Available Services</Link>
           </li>
           <li className="shrink-0 text-[#806b62]">
             <Link href={`/book/therapist?serviceId=${serviceId}`}>
-              02 Therapist
+              02 Available Agents
             </Link>
           </li>
           <li className="shrink-0 text-[#806b62]">
-            <Link href={`/book/date-time?${dateTimeParams}`}>03 Date &amp; time</Link>
+            <Link href={`/book/date-time?${dateTimeParams}`}>03 Date &amp; Time Selection</Link>
           </li>
-          <li className="shrink-0 text-[#806b62]">04 Details</li>
-          <li className="shrink-0 text-[#5f4037]">05 Review</li>
+          <li className="shrink-0 text-[#806b62]">04 Customer Information</li>
+          <li className="shrink-0 text-[#5f4037]">05 Verify Order Details</li>
         </ol>
       </nav>
 
@@ -107,7 +107,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
             Step five
           </p>
           <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
-            Review your booking
+            Verify Order Details
           </h1>
           <p className="mt-4 text-base leading-7 text-[#746760]">
             Check your appointment details before confirming your booking.

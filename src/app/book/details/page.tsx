@@ -86,18 +86,18 @@ export default async function DetailsPage({ searchParams }: DetailsPageProps) {
       <nav aria-label="Booking progress" className="border-b border-[#d9cec8]">
         <ol className="mx-auto flex max-w-7xl gap-8 overflow-x-auto px-5 py-4 text-xs font-semibold uppercase tracking-[0.16em] sm:px-8">
           <li className="shrink-0 text-[#806b62]">
-            <Link href="/book">01 Services</Link>
+            <Link href="/book">01 Available Services</Link>
           </li>
           <li className="shrink-0 text-[#806b62]">
             <Link href={`/book/therapist?serviceId=${serviceId}`}>
-              02 Therapist
+              02 Available Agents
             </Link>
           </li>
           <li className="shrink-0 text-[#806b62]">
-            <Link href={`/book/date-time?${backParams}`}>03 Date &amp; time</Link>
+            <Link href={`/book/date-time?${backParams}`}>03 Date &amp; Time Selection</Link>
           </li>
-          <li className="shrink-0 text-[#5f4037]">04 Details</li>
-          <li className="shrink-0 text-[#a79790]">05 Review</li>
+          <li className="shrink-0 text-[#5f4037]">04 Customer Information</li>
+          <li className="shrink-0 text-[#a79790]">05 Verify Order Details</li>
         </ol>
       </nav>
 
@@ -107,7 +107,7 @@ export default async function DetailsPage({ searchParams }: DetailsPageProps) {
             Step four
           </p>
           <h1 className="font-serif text-4xl leading-tight sm:text-5xl">
-            Tell us about you
+            Customer Information
           </h1>
           <p className="mt-4 text-base leading-7 text-[#746760]">
             We&apos;ll use these details for your appointment confirmation.
