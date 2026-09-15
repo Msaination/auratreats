@@ -279,6 +279,7 @@ export function ReviewBooking({
               {review.paymentMethods.map((method) => {
                 const isBankTransfer = method.id === "bacs";
                 const isPayLater = method.id === "local";
+                const isPayViaEft = isPayLater || isBankTransfer;
                 const isSelected = paymentMethod === method.id;
                 const Icon = isPayLater
                   ? CalendarClock
@@ -303,17 +304,11 @@ export function ReviewBooking({
                     </span>
                     <span>
                       <span className="block font-semibold text-[#493d38]">
-                        {isPayLater
-                          ? "Pay Later"
-                          : isBankTransfer
-                            ? "Pay via EFT"
-                            : method.name}
+                        {isPayViaEft ? "Pay Via EFT" : method.name}
                       </span>
                       <span className="mt-1 block text-sm leading-5 text-[#746760]">
-                        {isPayLater
-                          ? "Confirm your appointment now and pay locally at Aura Spa."
-                          : isBankTransfer
-                          ? "Banking instructions will be provided at checkout."
+                        {isPayLater || isBankTransfer
+                          ? "Booking will automatically be cancelled if payment is not reflected or processed in our system."
                           : "Pay securely online through WooCommerce checkout."}
                       </span>
                     </span>
@@ -363,7 +358,8 @@ export function ReviewBooking({
           Back to details
         </Link>
         <button
-          className="mt-3 flex w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f3e9e4]"
+          className="mt-3 flex w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition opacity-50 cursor-not-allowed"
+          disabled
           onClick={addMoreItems}
           type="button"
         >

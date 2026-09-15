@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BookingProgress } from "../progress";
 import { ReviewBooking } from "./review-booking";
 import { getAvailability, getReview } from "@/lib/latepoint";
 
@@ -83,23 +84,15 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
         </div>
       </header>
 
-      <nav aria-label="Booking progress" className="border-b border-[#d9cec8]">
-        <ol className="mx-auto flex max-w-7xl gap-8 overflow-x-auto px-5 py-4 text-xs font-semibold uppercase tracking-[0.16em] sm:px-8">
-          <li className="shrink-0 text-[#806b62]">
-            <Link href="/book">01 Available Services</Link>
-          </li>
-          <li className="shrink-0 text-[#806b62]">
-            <Link href={`/book/therapist?serviceId=${serviceId}`}>
-              02 Available Agents
-            </Link>
-          </li>
-          <li className="shrink-0 text-[#806b62]">
-            <Link href={`/book/date-time?${dateTimeParams}`}>03 Date &amp; Time Selection</Link>
-          </li>
-          <li className="shrink-0 text-[#806b62]">04 Customer Information</li>
-          <li className="shrink-0 text-[#5f4037]">05 Verify Order Details</li>
-        </ol>
-      </nav>
+      <BookingProgress
+        steps={[
+          { label: "Services", href: "/book", complete: true },
+          { label: "Agents", href: `/book/therapist?serviceId=${serviceId}`, complete: true },
+          { label: "Date & Time", href: `/book/date-time?${dateTimeParams}`, complete: true },
+          { label: "Your Details", href: `/book/details?${dateTimeParams}&startMinutes=${startMinutes}`, complete: true },
+          { label: "Review", current: true },
+        ]}
+      />
 
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
         <div className="mb-10 max-w-2xl">

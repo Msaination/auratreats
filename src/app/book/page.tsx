@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BookingProgress } from "./progress";
 import { ServiceSelector } from "./service-selector";
 import { getServiceCatalog } from "@/lib/latepoint";
 
@@ -17,8 +18,8 @@ export default async function BookPage() {
     <main className="min-h-screen bg-[#f3eee9] text-[#352d2a]">
       <header className="border-b border-[#d9cec7] bg-[#f8f4f1]/90 backdrop-blur-sm">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
-          <Link className="font-serif text-2xl tracking-tight text-[#2f2826]" href="/">
-            Aura Spa
+          <Link className="flex items-center" href="/">
+            <img src="/AuraLogo.png" alt="Aura Spa logo" className="h-14 w-auto object-contain sm:h-16" />
           </Link>
           <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#806b62] sm:text-xs">
             Book an appointment
@@ -26,15 +27,15 @@ export default async function BookPage() {
         </div>
       </header>
 
-      <nav aria-label="Booking progress" className="border-b border-[#e1d4cd] bg-[#f7f0eb]">
-        <ol className="mx-auto flex max-w-7xl gap-6 overflow-x-auto px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a7269] sm:px-8 sm:text-xs">
-          <li className="shrink-0 text-[#5f4037]">01 Available Services</li>
-          <li className="shrink-0">02 Available Agents</li>
-          <li className="shrink-0">03 Date &amp; Time Selection</li>
-          <li className="shrink-0">04 Customer Information</li>
-          <li className="shrink-0">05 Verify Order Details</li>
-        </ol>
-      </nav>
+      <BookingProgress
+        steps={[
+          { label: "Services", current: true },
+          { label: "Agents" },
+          { label: "Date & Time" },
+          { label: "Your Details" },
+          { label: "Review" },
+        ]}
+      />
 
       <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
         <div className="mb-8 overflow-hidden rounded-[2.25rem] border border-[#d8c9c0] bg-[linear-gradient(135deg,#f9f4f1_0%,#f4e8e1_40%,#efe2db_100%)] px-5 py-7 shadow-[0_18px_40px_rgba(90,72,64,0.06)] sm:px-8 sm:py-8">
@@ -51,18 +52,22 @@ export default async function BookPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
+            <div className="flex flex-wrap items-center gap-2 text-[#695a55] lg:justify-end">
               {[
                 "Wellness",
                 "Beauty",
                 "Restoration",
-              ].map((tag) => (
-                <span
-                  className="rounded-full border border-[#d2b9ae] bg-[#fffdfb]/90 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#695a55]"
-                  key={tag}
-                >
-                  {tag}
-                </span>
+              ].map((tag, index) => (
+                <div className="flex items-center gap-2" key={tag}>
+                  {index > 0 ? (
+                    <span aria-hidden="true" className="text-[10px] font-semibold">
+                      ·
+                    </span>
+                  ) : null}
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">
+                    {tag}
+                  </span>
+                </div>
               ))}
             </div>
           </div>

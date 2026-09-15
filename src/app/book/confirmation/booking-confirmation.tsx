@@ -33,6 +33,32 @@ type Confirmation = {
   calendarDataUri: string;
 };
 
+const celebrationSprinkles = [
+  { left: "10%", top: "12%", x: -22, y: 86, delay: "0s", duration: "1.4s", color: "#e9c7a6" },
+  { left: "18%", top: "16%", x: 42, y: 96, delay: "0.05s", duration: "1.55s", color: "#d7a78f" },
+  { left: "24%", top: "10%", x: 72, y: 84, delay: "0.1s", duration: "1.5s", color: "#c6d9c6" },
+  { left: "32%", top: "16%", x: -38, y: 96, delay: "0.15s", duration: "1.4s", color: "#f0d7ae" },
+  { left: "42%", top: "8%", x: 30, y: 92, delay: "0.18s", duration: "1.55s", color: "#d9b8b4" },
+  { left: "50%", top: "18%", x: 64, y: 90, delay: "0.22s", duration: "1.6s", color: "#c9d0bd" },
+  { left: "58%", top: "10%", x: -46, y: 96, delay: "0.26s", duration: "1.45s", color: "#e8d3b7" },
+  { left: "68%", top: "18%", x: 38, y: 96, delay: "0.3s", duration: "1.5s", color: "#d4b7d5" },
+  { left: "76%", top: "12%", x: -28, y: 98, delay: "0.34s", duration: "1.6s", color: "#efc2a8" },
+  { left: "84%", top: "18%", x: 40, y: 100, delay: "0.38s", duration: "1.55s", color: "#c6d5c2" },
+  { left: "12%", top: "30%", x: 52, y: 112, delay: "0.04s", duration: "1.5s", color: "#d6c7aa" },
+  { left: "22%", top: "34%", x: -56, y: 118, delay: "0.12s", duration: "1.6s", color: "#d0b497" },
+  { left: "34%", top: "30%", x: 64, y: 110, delay: "0.18s", duration: "1.55s", color: "#c6d5ae" },
+  { left: "46%", top: "36%", x: -40, y: 114, delay: "0.24s", duration: "1.5s", color: "#f1d8b8" },
+  { left: "58%", top: "30%", x: 52, y: 110, delay: "0.3s", duration: "1.4s", color: "#d8b7ae" },
+  { left: "72%", top: "34%", x: -48, y: 106, delay: "0.34s", duration: "1.55s", color: "#c7d7de" },
+  { left: "82%", top: "30%", x: 42, y: 112, delay: "0.4s", duration: "1.6s", color: "#e8c7c1" },
+  { left: "18%", top: "46%", x: 18, y: 118, delay: "0.12s", duration: "1.5s", color: "#d5c3b4" },
+  { left: "64%", top: "46%", x: -34, y: 118, delay: "0.32s", duration: "1.6s", color: "#f2d9ab" },
+  { left: "88%", top: "46%", x: 34, y: 120, delay: "0.46s", duration: "1.55s", color: "#c6d5c2" },
+  { left: "30%", top: "52%", x: 26, y: 128, delay: "0.16s", duration: "1.55s", color: "#d8c0bd" },
+  { left: "54%", top: "52%", x: -28, y: 126, delay: "0.28s", duration: "1.6s", color: "#d4b6a5" },
+  { left: "74%", top: "52%", x: 30, y: 126, delay: "0.4s", duration: "1.55s", color: "#c2c9d9" },
+];
+
 function subscribe() {
   return () => {};
 }
@@ -148,6 +174,24 @@ export function BookingConfirmation() {
         className="relative z-10 w-full max-w-4xl border border-[#cbbdb6] bg-[#f8f4f1] shadow-2xl"
         role="dialog"
       >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {celebrationSprinkles.map((sprinkle, index) => (
+            <span
+              key={`${sprinkle.left}-${sprinkle.top}-${index}`}
+              className="sprinkle-piece"
+              style={{
+                left: sprinkle.left,
+                top: sprinkle.top,
+                background: sprinkle.color,
+                animationDelay: sprinkle.delay,
+                animationDuration: sprinkle.duration,
+                ["--x" as string]: `${sprinkle.x}px`,
+                ["--y" as string]: `${sprinkle.y}px`,
+              }}
+            />
+          ))}
+        </div>
+
         <button
           aria-label="Close confirmation and return home"
           className="absolute right-4 top-4 flex size-10 items-center justify-center border border-[#cbbdb6] bg-[#f8f4f1] text-[#5f4037] transition hover:bg-[#eee2dc]"
@@ -275,6 +319,33 @@ export function BookingConfirmation() {
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        .sprinkle-piece {
+          position: absolute;
+          width: 12px;
+          height: 12px;
+          border-radius: 9999px;
+          opacity: 0;
+          box-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 204, 150, 0.8);
+          animation: sprinkle-burst 1.5s ease-out forwards;
+        }
+
+        @keyframes sprinkle-burst {
+          0% {
+            opacity: 0;
+            transform: translate3d(0, 0, 0) scale(0.25) rotate(0deg);
+          }
+          20% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1.1) rotate(40deg);
+          }
+          100% {
+            opacity: 0;
+            transform: translate3d(var(--x), var(--y), 0) scale(1.35) rotate(220deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }

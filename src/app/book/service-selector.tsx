@@ -1,6 +1,22 @@
 "use client";
 
-import { ArrowRight, Check, Clock, Search } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Footprints,
+  Gem,
+  Hand,
+  HeartPulse,
+  Leaf,
+  ScanFace,
+  Scissors,
+  Search,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useDeferredValue,
@@ -46,6 +62,12 @@ function getPriceLabel(service: LatePointService) {
 export function ServiceSelector({ categories, total }: ServiceCatalog) {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">(
     "all",
+  );
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Record<number, boolean>>(
+    () =>
+      Object.fromEntries(
+        categories.map((category) => [category.id, false]),
+      ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
   const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
@@ -123,6 +145,13 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
     }))
     .filter((category) => category.services.length > 0);
 
+  function toggleCategory(categoryId: number) {
+    setExpandedCategoryIds((current) => ({
+      ...current,
+      [categoryId]: !current[categoryId],
+    }));
+  }
+
   const visibleTotal = visibleCategories.reduce(
     (count, category) => count + category.services.length,
     0,
@@ -183,6 +212,75 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
 
       return [...current, { service, duration }];
     });
+  }
+
+  function getCategoryIcon(categoryName: string) {
+    const normalized = categoryName.toLowerCase();
+
+    if (
+      normalized.includes("massage") ||
+      normalized.includes("body") ||
+      normalized.includes("scrub") ||
+      normalized.includes("therapy") ||
+      normalized.includes("relax")
+    ) {
+      return HeartPulse;
+    }
+
+    if (
+      normalized.includes("nail") ||
+      normalized.includes("mani") ||
+      normalized.includes("pedi") ||
+      normalized.includes("fingers")
+    ) {
+      return Hand;
+    }
+
+    if (normalized.includes("feet") || normalized.includes("foot")) {
+      return Footprints;
+    }
+
+    if (
+      normalized.includes("facial") ||
+      normalized.includes("skin") ||
+      normalized.includes("head") ||
+      normalized.includes("beauty")
+    ) {
+      return ScanFace;
+    }
+
+    if (
+      normalized.includes("hair") ||
+      normalized.includes("cut") ||
+      normalized.includes("style") ||
+      normalized.includes("braid")
+    ) {
+      return Scissors;
+    }
+
+    if (
+      normalized.includes("spa") ||
+      normalized.includes("wellness") ||
+      normalized.includes("detox") ||
+      normalized.includes("treatment")
+    ) {
+      return Leaf;
+    }
+
+    if (
+      normalized.includes("wax") ||
+      normalized.includes("lash") ||
+      normalized.includes("brow") ||
+      normalized.includes("makeup")
+    ) {
+      return Wand2;
+    }
+
+    if (normalized.includes("gem") || normalized.includes("gel")) {
+      return Gem;
+    }
+
+    return Sparkles;
   }
 
   function selectDuration(serviceId: number, duration: ServiceDuration) {
@@ -313,7 +411,7 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
       >
         <button
           aria-selected={activeCategoryId === "all"}
-          className={`h-10 rounded-full border px-4 text-sm font-semibold tracking-[0.12em] uppercase transition ${
+          className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
             activeCategoryId === "all"
               ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
               : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
@@ -322,24 +420,29 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
           role="tab"
           type="button"
         >
-          All {total}
+          <span>All</span>
         </button>
-        {categories.map((category) => (
-          <button
-            aria-selected={activeCategoryId === category.id}
-            className={`h-10 rounded-full border px-4 text-sm font-semibold tracking-[0.12em] uppercase transition ${
-              activeCategoryId === category.id
-                ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
-                : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
-            }`}
-            key={category.id}
-            onClick={() => setActiveCategoryId(category.id)}
-            role="tab"
-            type="button"
-          >
-            {category.name}
-          </button>
-        ))}
+        {categories.map((category) => {
+          const CategoryIcon = getCategoryIcon(category.name);
+
+          return (
+            <button
+              aria-selected={activeCategoryId === category.id}
+              className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
+                activeCategoryId === category.id
+                  ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
+                  : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
+              }`}
+              key={category.id}
+              onClick={() => setActiveCategoryId(category.id)}
+              role="tab"
+              type="button"
+            >
+              <CategoryIcon className="size-3.5" aria-hidden="true" />
+              <span>{category.name}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="min-w-0 w-full">
@@ -349,147 +452,166 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
 
         {visibleCategories.length ? (
           <div className="space-y-7">
-            {visibleCategories.map((category) => (
-              <section aria-labelledby={`category-${category.id}`} key={category.id}>
-                <div className="mb-3 flex items-center justify-between gap-4 border-b border-[#d9c9bf] pb-2.5">
-                  <h3
-                    className="font-serif text-xl text-[#352d2a] sm:text-2xl"
-                    id={`category-${category.id}`}
+            {visibleCategories.map((category) => {
+              const isCollapsed = expandedCategoryIds[category.id] === false;
+
+              return (
+                <section aria-labelledby={`category-${category.id}`} key={category.id}>
+                  <button
+                    className="mb-3 flex w-full items-center justify-between gap-4 border-b border-[#d9c9bf] pb-2.5 text-left"
+                    onClick={() => toggleCategory(category.id)}
+                    type="button"
                   >
-                    {category.name}
-                  </h3>
-                  <span className="rounded-full border border-[#e0d1c8] bg-[#fffdfb] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8d7970]">
-                    {category.services.length}
-                  </span>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {category.services.map((service) => {
-                    const selectedItem =
-                      selectedServices.find(
-                        (candidate) => candidate.service.id === service.id,
-                      ) ?? null;
-                    const isSelected = selectedItem !== null;
-                    const isPrimary = selectedPrimary?.service.id === service.id;
-                    const isAddOn =
-                      !!selectedPrimary &&
-                      service.id !== selectedPrimary.service.id &&
-                      selectedAddOns.some((candidate) => candidate.service.id === service.id);
-
-                    return (
-                      <Card
-                        className={`h-full overflow-hidden border transition-all ${
-                          isSelected
-                            ? "border-[#5f4037] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] shadow-[0_16px_35px_rgba(88,68,59,0.08)]"
-                            : "border-[#e7ddd7] bg-[linear-gradient(180deg,#ffffff_0%,#fdf9f7_100%)] hover:border-[#c9a99a] hover:shadow-[0_10px_25px_rgba(88,68,59,0.04)]"
-                        }`}
-                        key={service.id}
+                    <div className="flex items-center gap-3">
+                      <h3
+                        className="font-serif text-xl text-[#352d2a] sm:text-2xl"
+                        id={`category-${category.id}`}
                       >
-                        <button
-                          aria-pressed={isSelected}
-                          className="block w-full text-left"
-                          onClick={() => selectService(service)}
-                          type="button"
-                        >
-                          <CardContent className="p-3.5 sm:p-4">
-                            <div className="flex items-start justify-between gap-2.5">
-                              <div className="min-w-0">
-                                <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#8a756c]">
-                                  <span className="inline-block h-2 w-2 rounded-full bg-[#b1887a]" />
-                                  {isPrimary ? "Primary treatment" : isAddOn ? "Add-on selected" : "Signature ritual"}
-                                </div>
-                                <div className="flex items-start gap-2">
-                                  <h4 className="text-base font-semibold text-[#352d2a] sm:text-lg">
-                                    {service.name}
-                                  </h4>
-                                  {isSelected ? (
-                                    <Check
-                                      aria-hidden="true"
-                                      className="mt-0.5 size-4 shrink-0 text-[#7c554a]"
-                                    />
-                                  ) : null}
-                                </div>
-                              </div>
+                        {category.name}
+                      </h3>
+                      <span className="rounded-full border border-[#e0d1c8] bg-[#fffdfb] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8d7970]">
+                        {category.services.length} service{category.services.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-[#5f4037]">
+                      {isCollapsed ? (
+                        <ChevronDown aria-hidden="true" className="size-4" />
+                      ) : (
+                        <ChevronUp aria-hidden="true" className="size-4" />
+                      )}
+                    </span>
+                  </button>
 
-                              <span className="rounded-full border border-[#d9c5bb] bg-[#fffdfb] px-2.5 py-1.5 text-right text-xs font-semibold text-[#5f4037] shadow-[0_8px_18px_rgba(85,66,59,0.04)]">
-                                {getPriceLabel(service)}
-                              </span>
-                            </div>
+                  {!isCollapsed ? (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {category.services.map((service) => {
+                        const selectedItem =
+                          selectedServices.find(
+                            (candidate) => candidate.service.id === service.id,
+                          ) ?? null;
+                        const isSelected = selectedItem !== null;
+                        const isPrimary = selectedPrimary?.service.id === service.id;
+                        const isAddOn =
+                          !!selectedPrimary &&
+                          service.id !== selectedPrimary.service.id &&
+                          selectedAddOns.some((candidate) => candidate.service.id === service.id);
 
-                            {service.shortDescription ? (
-                              <p className="mt-3 text-sm leading-6 text-[#746760]">
-                                {service.shortDescription}
-                              </p>
-                            ) : null}
-
-                            <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[#746760]">
-                              <span className="inline-flex items-center gap-1.5">
-                                <Clock aria-hidden="true" className="size-4" />
-                                {service.durationMinutes} min
-                              </span>
-                              <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8a756c]">
-                                {isPrimary ? "Primary" : isAddOn ? "Add-on" : isSelected ? "Selected" : "Available"}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </button>
-
-                        {selectedPrimary && !isPrimary ? (
-                          <div className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
+                        return (
+                          <Card
+                            className={`h-full overflow-hidden border transition-all ${
+                              isSelected
+                                ? "border-[#5f4037] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] shadow-[0_16px_35px_rgba(88,68,59,0.08)]"
+                                : "border-[#e7ddd7] bg-[linear-gradient(180deg,#ffffff_0%,#fdf9f7_100%)] hover:border-[#c9a99a] hover:shadow-[0_10px_25px_rgba(88,68,59,0.04)]"
+                            }`}
+                            key={service.id}
+                          >
                             <button
-                              className={`inline-flex w-full items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
-                                isAddOn
-                                  ? "border-[#5f4037] bg-[#5f4037] text-white"
-                                  : "border-[#d4c1b9] bg-white text-[#4e433f] hover:border-[#79594f] hover:bg-[#fffdfb]"
-                              }`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggleAddOn(service);
-                              }}
+                              aria-pressed={isSelected}
+                              className="block w-full text-left"
+                              onClick={() => selectService(service)}
                               type="button"
                             >
-                              {isAddOn ? "Remove add-on" : "Add as add-on"}
-                            </button>
-                          </div>
-                        ) : null}
+                              <CardContent className="p-3.5 sm:p-4">
+                                <div className="flex items-start justify-between gap-2.5">
+                                  <div className="min-w-0">
+                                    <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#8a756c]">
+                                      <span className="inline-block h-2 w-2 rounded-full bg-[#b1887a]" />
+                                      {isPrimary ? "Primary treatment" : isAddOn ? "Add-on selected" : "Signature ritual"}
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                      <h4 className="text-base font-semibold text-[#352d2a] sm:text-lg">
+                                        {service.name}
+                                      </h4>
+                                      {isSelected ? (
+                                        <Check
+                                          aria-hidden="true"
+                                          className="mt-0.5 size-4 shrink-0 text-[#7c554a]"
+                                        />
+                                      ) : null}
+                                    </div>
+                                  </div>
 
-                        {isSelected && !isPrimary && service.durations.length > 1 ? (
-                          <CardFooter className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
-                            <div className="w-full">
-                              <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#786b65]">
-                                Choose duration
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {service.durations.map((duration) => (
-                                  <Button
-                                    aria-pressed={selectedItem?.duration.id === duration.id}
-                                    className={`rounded-full border px-2.5 py-1.5 text-xs font-medium transition ${
-                                      selectedItem?.duration.id === duration.id
-                                        ? "border-[#5f4037] bg-[#5f4037] text-white shadow-sm hover:bg-[#5f4037]"
-                                        : "border-[#d4c1b9] bg-white text-[#4e433f] hover:border-[#79594f] hover:bg-[#fffdfb]"
-                                    }`}
-                                    key={duration.id}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      selectDuration(service.id, duration);
-                                    }}
-                                    size="sm"
-                                    type="button"
-                                    variant="outline"
-                                  >
-                                    {duration.durationMinutes} min · {duration.formattedPrice}
-                                  </Button>
-                                ))}
+                                  <span className="rounded-full border border-[#d9c5bb] bg-[#fffdfb] px-2.5 py-1.5 text-right text-xs font-semibold text-[#5f4037] shadow-[0_8px_18px_rgba(85,66,59,0.04)]">
+                                    {getPriceLabel(service)}
+                                  </span>
+                                </div>
+
+                                {service.shortDescription ? (
+                                  <p className="mt-3 text-sm leading-6 text-[#746760]">
+                                    {service.shortDescription}
+                                  </p>
+                                ) : null}
+
+                                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[#746760]">
+                                  <span className="inline-flex items-center gap-1.5">
+                                    <Clock aria-hidden="true" className="size-4" />
+                                    {service.durationMinutes} min
+                                  </span>
+                                  <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8a756c]">
+                                    {isPrimary ? "Primary" : isAddOn ? "Add-on" : isSelected ? "Selected" : "Available"}
+                                  </span>
+                                </div>
+                              </CardContent>
+                            </button>
+
+                            {selectedPrimary && !isPrimary ? (
+                              <div className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
+                                <button
+                                  className={`inline-flex w-full items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+                                    isAddOn
+                                      ? "border-[#5f4037] bg-[#5f4037] text-white"
+                                      : "border-[#d4c1b9] bg-white text-[#4e433f] hover:border-[#79594f] hover:bg-[#fffdfb]"
+                                  }`}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggleAddOn(service);
+                                  }}
+                                  type="button"
+                                >
+                                  {isAddOn ? "Remove add-on" : "Add as add-on"}
+                                </button>
                               </div>
-                            </div>
-                          </CardFooter>
-                        ) : null}
-                      </Card>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
+                            ) : null}
+
+                            {isSelected && !isPrimary && service.durations.length > 1 ? (
+                              <CardFooter className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
+                                <div className="w-full">
+                                  <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#786b65]">
+                                    Choose duration
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {service.durations.map((duration) => (
+                                      <Button
+                                        aria-pressed={selectedItem?.duration.id === duration.id}
+                                        className={`rounded-full border px-2.5 py-1.5 text-xs font-medium transition ${
+                                          selectedItem?.duration.id === duration.id
+                                            ? "border-[#5f4037] bg-[#5f4037] text-white shadow-sm hover:bg-[#5f4037]"
+                                            : "border-[#d4c1b9] bg-white text-[#4e433f] hover:border-[#79594f] hover:bg-[#fffdfb]"
+                                        }`}
+                                        key={duration.id}
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          selectDuration(service.id, duration);
+                                        }}
+                                        size="sm"
+                                        type="button"
+                                        variant="outline"
+                                      >
+                                        {duration.durationMinutes} min · {duration.formattedPrice}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </CardFooter>
+                            ) : null}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
           </div>
         ) : (
           <div className="rounded-[1.5rem] border border-[#d9c9bf] bg-[#f9f3f0] py-16 text-center">

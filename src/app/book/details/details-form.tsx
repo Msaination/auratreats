@@ -65,6 +65,15 @@ const autocompleteByField: Record<CustomerField["name"], string> = {
   notes: "off",
 };
 
+function normalizePhoneNumber(value: string) {
+  return value.replace(/\D/g, "").slice(0, 10);
+}
+
+function isValidCellPhone(value: string) {
+  const normalized = normalizePhoneNumber(value);
+  return /^0\d{9}$/.test(normalized);
+}
+
 export function DetailsForm({
   catalog,
   fields,
@@ -122,6 +131,19 @@ export function DetailsForm({
     const customer = Object.fromEntries(
       fields.map((field) => [field.name, String(formData.get(field.name) ?? "").trim()]),
     );
+    const phoneValue = normalizePhoneNumber(String(customer.phone ?? ""));
+
+    if (!isValidCellPhone(phoneValue)) {
+      const phoneField = event.currentTarget.querySelector<HTMLInputElement>('input[name="phone"]');
+      if (phoneField) {
+        phoneField.setCustomValidity("Cell number must be exactly 10 digits starting with 0.");
+        phoneField.reportValidity();
+        phoneField.setCustomValidity("");
+      }
+      return;
+    }
+
+    customer.phone = phoneValue;
     const draft = readBookingDraft();
     const storedAddonServices = Array.isArray(draft.addonServices)
       ? (draft.addonServices as Array<Record<string, unknown>>)
@@ -221,8 +243,15 @@ export function DetailsForm({
                       ? (storedCustomer[field.name] as string)
                       : ""
                   }
-                  maxLength={field.type === "email" ? 254 : 100}
+                  inputMode={field.name === "phone" ? "numeric" : undefined}
+                  maxLength={field.type === "email" ? 254 : field.name === "phone" ? 10 : 100}
                   name={field.name}
+                  onChange={(event) => {
+                    if (field.name === "phone") {
+                      event.target.value = normalizePhoneNumber(event.target.value);
+                    }
+                  }}
+                  pattern={field.name === "phone" ? "0[0-9]{9}" : undefined}
                   required={field.required}
                   type={field.type}
                 />
