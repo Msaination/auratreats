@@ -272,7 +272,7 @@ export function ReviewBooking({
         <section aria-labelledby="payment-heading">
           <div className="border-b border-[#cbbdb6] pb-4">
             <h2 id="payment-heading" className="font-serif text-2xl">Payment method</h2>
-            <p className="mt-2 text-sm text-[#746760]">Payment will be settled locally at your appointment.</p>
+            <p className="mt-2 text-sm text-[#746760]">Banking details will be sent via email.</p>
           </div>
           {review.paymentMethods.length ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -331,8 +331,12 @@ export function ReviewBooking({
           <span className="text-sm text-[#746760]">Appointment total</span>
           <strong className="font-serif text-3xl font-normal text-[#352d2a]">{review.total.formatted}</strong>
         </div>
+        <p aria-live="polite" className="mt-6 min-h-10 text-center text-xs leading-5 text-[#786b65]">
+          {checkoutError ||
+            "Your appointment is booked when you confirm below."}
+        </p>
         <button
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
+          className="mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
           disabled={!paymentMethod || isStartingCheckout}
           onClick={startCheckout}
           type="button"
@@ -346,10 +350,6 @@ export function ReviewBooking({
               : "Proceed to secure checkout"}
           <ShieldCheck aria-hidden="true" className="size-4" />
         </button>
-        <p aria-live="polite" className="mt-3 min-h-10 text-center text-xs leading-5 text-[#786b65]">
-          {checkoutError ||
-            "Your appointment is booked when you confirm below."}
-        </p>
         <Link
           className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-[#6f5047]"
           href={`/book/details?${detailsParams}`}
