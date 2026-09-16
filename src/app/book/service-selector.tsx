@@ -16,14 +16,10 @@ import {
   Search,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  useDeferredValue,
-  useEffect,
-  useState,
-  useTransition,
-} from "react";
+import { useDeferredValue, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type {
@@ -59,7 +55,7 @@ function getPriceLabel(service: LatePointService) {
   return `${service.price.isVariable ? "From " : ""}${service.price.formatted}`;
 }
 
-export function ServiceSelector({ categories, total }: ServiceCatalog) {
+export function ServiceSelector({ categories }: ServiceCatalog) {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">(
     "all",
   );
@@ -70,25 +66,19 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
       ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
-  const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
-  const [isPending, startTransition] = useTransition();
-  const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
-  const router = useRouter();
-  const selectedPrimary = selectedServices[0] ?? null;
-  const selectedAddOns = selectedServices.slice(1);
-
-  useEffect(() => {
+  const [selectedServices, setSelectedServices] = useState<Selection[]>(() => {
     const draft = readBookingDraft();
     const draftSelections = Array.isArray(draft.selectedServices)
       ? (draft.selectedServices as Array<Record<string, unknown>>)
       : [];
 
     if (!draftSelections.length) {
-      return;
+      return [];
     }
 
     const allServices = categories.flatMap((category) => category.services);
-    const nextSelections = draftSelections
+
+    return draftSelections
       .map((entry) => {
         const service = allServices.find(
           (candidate) => candidate.id === Number(entry.serviceId),
@@ -111,11 +101,12 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
         return { service, duration } satisfies Selection;
       })
       .filter((entry): entry is Selection => entry !== null);
-
-    if (nextSelections.length) {
-      setSelectedServices(nextSelections);
-    }
-  }, [categories]);
+  });
+  const [isPending, startTransition] = useTransition();
+  const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
+  const router = useRouter();
+  const selectedPrimary = selectedServices[0] ?? null;
+  const selectedAddOns = selectedServices.slice(1);
 
   const bundleDurationMinutes = selectedServices.reduce(
     (sum, entry) => sum + entry.duration.durationMinutes,
@@ -149,6 +140,21 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
     setExpandedCategoryIds((current) => ({
       ...current,
       [categoryId]: !current[categoryId],
+    }));
+  }
+
+  function selectCategory(categoryId: number | "all") {
+    setActiveCategoryId(categoryId);
+
+    if (categoryId === "all") {
+      return;
+    }
+
+    setExpandedCategoryIds((current) => ({
+      ...Object.fromEntries(
+        Object.keys(current).map((key) => [Number(key), false]),
+      ),
+      [categoryId]: true,
     }));
   }
 
@@ -291,6 +297,12 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
     );
   }
 
+  function removeSelectedService(serviceId: number) {
+    setSelectedServices((current) =>
+      current.filter((candidate) => candidate.service.id !== serviceId),
+    );
+  }
+
   function saveSelection() {
     if (!selectedPrimary) {
       return;
@@ -368,25 +380,38 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
                 Selected treatment
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className="inline-flex rounded-full border border-[#d8b7ab] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5f4037]"
-                >
-                  {selectedPrimary.service.name} · {selectedPrimary.duration.durationMinutes} min
-                </span>
-                {selectedAddOns.length ? (
-                  selectedAddOns.map(({ service, duration }) => (
+                {selectedServices.map(({ service, duration }, index) => {
+                  const isPrimarySelection = index === 0;
+
+                  return (
                     <span
-                      className="inline-flex rounded-full border border-[#d8b7ab] bg-white/80 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5f4037]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b7ab] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5f4037]"
                       key={service.id}
                     >
-                      {service.name} · {duration.durationMinutes} min
+                      <span>
+                        {isPrimarySelection
+                          ? `${service.name} · ${duration.durationMinutes} min`
+                          : `${service.name} · ${duration.durationMinutes} min`}
+                      </span>
+                      <button
+                        aria-label={`Remove ${service.name}`}
+                        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#5f4037] text-white transition hover:bg-[#43332f]"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeSelectedService(service.id);
+                        }}
+                        type="button"
+                      >
+                        <X aria-hidden="true" className="size-2.5" />
+                      </button>
                     </span>
-                  ))
-                ) : (
+                  );
+                })}
+                {!selectedAddOns.length ? (
                   <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8a756c]">
                     No add-ons selected
                   </span>
-                )}
+                ) : null}
               </div>
             </div>
 
@@ -416,7 +441,7 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
               ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
               : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
           }`}
-          onClick={() => setActiveCategoryId("all")}
+          onClick={() => selectCategory("all")}
           role="tab"
           type="button"
         >
@@ -434,7 +459,7 @@ export function ServiceSelector({ categories, total }: ServiceCatalog) {
                   : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
               }`}
               key={category.id}
-              onClick={() => setActiveCategoryId(category.id)}
+              onClick={() => selectCategory(category.id)}
               role="tab"
               type="button"
             >
