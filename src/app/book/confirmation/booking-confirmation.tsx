@@ -131,9 +131,22 @@ export function BookingConfirmation() {
           currency: "ZAR",
         }).format(Number(confirmation?.totalPrice ?? 0));
 
-  function closeConfirmation() {
+  async function clearBookingState() {
     sessionStorage.removeItem("aura-booking-confirmation");
     sessionStorage.removeItem("aura-booking-draft");
+
+    if (typeof window !== "undefined" && "caches" in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+      } catch {
+        // Ignore cache-clearing failures; booking data should still be cleared.
+      }
+    }
+  }
+
+  function closeConfirmation() {
+    void clearBookingState();
     router.replace("/");
   }
 
@@ -145,8 +158,7 @@ export function BookingConfirmation() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        sessionStorage.removeItem("aura-booking-confirmation");
-        sessionStorage.removeItem("aura-booking-draft");
+        void clearBookingState();
         router.replace("/");
       }
     }

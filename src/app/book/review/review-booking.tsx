@@ -73,6 +73,19 @@ function getServerBookingDraftSnapshot() {
   return "";
 }
 
+async function clearBookingDraftState() {
+  sessionStorage.removeItem("aura-booking-draft");
+
+  if (typeof window !== "undefined" && "caches" in window) {
+    try {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    } catch {
+      // Ignore cache-clearing failures; the booking draft must still be removed.
+    }
+  }
+}
+
 export function ReviewBooking({
   availability,
   review,
@@ -199,6 +212,7 @@ export function ReviewBooking({
           "aura-booking-confirmation",
           JSON.stringify(result.confirmation),
         );
+        await clearBookingDraftState();
         router.push("/book/confirmation");
         return;
       }
