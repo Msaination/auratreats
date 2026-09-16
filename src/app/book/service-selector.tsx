@@ -249,6 +249,28 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     });
   }
 
+  function chooseServiceDuration(service: LatePointService, duration: ServiceDuration) {
+    setSelectedServices((current) => {
+      const existingIndex = current.findIndex(
+        (candidate) => candidate.service.id === service.id,
+      );
+
+      if (existingIndex >= 0) {
+        setSelectedExtraIds([]);
+        return current.map((candidate) =>
+          candidate.service.id === service.id ? { ...candidate, duration } : candidate,
+        );
+      }
+
+      if (current.length > 0) {
+        return current;
+      }
+
+      setSelectedExtraIds([]);
+      return [{ service, duration }];
+    });
+  }
+
   function toggleExtra(extra: NonNullable<LatePointService["extras"]>[number]) {
     if (!selectedPrimary) {
       return;
@@ -729,11 +751,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                               </CardContent>
                             </button>
 
-                            {isSelected && !isPrimary && service.durations.length > 1 ? (
+                            {service.durations.length > 1 ? (
                               <CardFooter className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
                                 <div className="w-full">
                                   <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#786b65]">
-                                    Choose duration
+                                    {isSelected ? "Choose duration" : "Available durations"}
                                   </p>
                                   <div className="flex flex-wrap gap-2">
                                     {service.durations.map((duration) => (
@@ -747,7 +769,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                         key={duration.id}
                                         onClick={(event) => {
                                           event.stopPropagation();
-                                          selectDuration(service.id, duration);
+                                          chooseServiceDuration(service, duration);
                                         }}
                                         size="sm"
                                         type="button"
