@@ -47,6 +47,10 @@ function readBookingDraft(): Record<string, unknown> {
   }
 }
 
+function clampAttendees(value: number, minimum: number, maximum: number) {
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
 function getPriceLabel(service: LatePointService) {
   if (service.price.amount <= 0) {
     return "Price varies";
@@ -67,15 +71,29 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   );
   const [query, setQuery] = useState("");
   const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
+  const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
+  const [totalAttendees, setTotalAttendees] = useState<number>(1);
 
   useEffect(() => {
     const draft = readBookingDraft();
     const draftSelections = Array.isArray(draft.selectedServices)
       ? (draft.selectedServices as Array<Record<string, unknown>>)
       : [];
+    const draftAddonServices = Array.isArray(draft.addonServices)
+      ? (draft.addonServices as Array<Record<string, unknown>>)
+      : [];
+    const draftTotalAttendees = Number(
+      draft.totalAttendees ?? draft.selectedTotalAttendees ?? 1,
+    );
 
     if (!draftSelections.length) {
       setSelectedServices([]);
+      setSelectedExtraIds(
+        draftAddonServices
+          .map((entry) => Number(entry.serviceId ?? entry.id))
+          .filter((value) => Number.isFinite(value) && value > 0),
+      );
+      setTotalAttendees(Number.isFinite(draftTotalAttendees) && draftTotalAttendees > 0 ? draftTotalAttendees : 1);
       return;
     }
 
@@ -106,20 +124,56 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       .filter((entry): entry is Selection => entry !== null);
 
     setSelectedServices(restoredSelections);
+    setSelectedExtraIds(
+      draftAddonServices
+        .map((entry) => Number(entry.serviceId ?? entry.id))
+        .filter((value) => Number.isFinite(value) && value > 0),
+    );
+    setTotalAttendees(
+      Number.isFinite(draftTotalAttendees) && draftTotalAttendees > 0
+        ? draftTotalAttendees
+        : 1,
+    );
   }, [categories]);
   const [isPending, startTransition] = useTransition();
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const router = useRouter();
   const selectedPrimary = selectedServices[0] ?? null;
+  const selectedPrimaryExtras = selectedPrimary?.service.extras ?? [];
+  const maxCapacity = Math.max(
+    1,
+    Number.isFinite(selectedPrimary?.service.capacityMax)
+      ? Number(selectedPrimary?.service.capacityMax ?? 1)
+      : 1,
+  );
+  const minCapacity = Math.max(
+    1,
+    Number.isFinite(selectedPrimary?.service.capacityMin)
+      ? Number(selectedPrimary?.service.capacityMin ?? 1)
+      : 1,
+  );
 
-  const bundleDurationMinutes = selectedServices.reduce(
-    (sum, entry) => sum + entry.duration.durationMinutes,
+  useEffect(() => {
+    setTotalAttendees((current) => clampAttendees(current, minCapacity, maxCapacity));
+  }, [minCapacity, maxCapacity]);
+
+  const effectiveTotalAttendees = clampAttendees(totalAttendees, minCapacity, maxCapacity);
+  const selectedExtraDurationMinutes = selectedPrimaryExtras
+    .filter((extra) => selectedExtraIds.includes(extra.id))
+    .reduce((sum, extra) => sum + extra.durationMinutes, 0);
+  const selectedExtraPrice = selectedPrimaryExtras
+    .filter((extra) => selectedExtraIds.includes(extra.id))
+    .reduce((sum, extra) => sum + Number(extra.price.amount ?? 0), 0);
+
+  const selectedServicePrice = selectedServices.reduce(
+    (sum, entry) => sum + Number(entry.duration.price ?? entry.service.price.amount ?? 0),
     0,
   );
-  const bundlePrice = selectedServices.reduce(
-    (sum, entry) => sum + Number(entry.duration.price ?? 0),
-    0,
-  );
+  const bundleDurationMinutes =
+    selectedServices.reduce((sum, entry) => sum + entry.duration.durationMinutes, 0) +
+    selectedExtraDurationMinutes;
+  const bundlePrice =
+    selectedServicePrice * effectiveTotalAttendees + selectedExtraPrice;
 
   const visibleCategories = categories
     .filter(
@@ -182,11 +236,29 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       );
 
       if (existingIndex >= 0) {
+        setSelectedExtraIds([]);
         return current.filter((candidate) => candidate.service.id !== service.id);
       }
 
+      if (current.length > 0) {
+        return current;
+      }
+
+      setSelectedExtraIds([]);
       return [{ service, duration }];
     });
+  }
+
+  function toggleExtra(extra: NonNullable<LatePointService["extras"]>[number]) {
+    if (!selectedPrimary) {
+      return;
+    }
+
+    setSelectedExtraIds((current) =>
+      current.includes(extra.id)
+        ? current.filter((id) => id !== extra.id)
+        : [...current, extra.id],
+    );
   }
 
   function getCategoryIcon(categoryName: string) {
@@ -270,6 +342,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     setSelectedServices((current) =>
       current.filter((candidate) => candidate.service.id !== serviceId),
     );
+    setSelectedExtraIds([]);
   }
 
   function saveSelection() {
@@ -277,6 +350,16 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       return;
     }
 
+    const nextTotalAttendees = clampAttendees(
+      effectiveTotalAttendees,
+      minCapacity,
+      maxCapacity,
+    );
+    const attendeeAdjustedServicePrice = selectedServices.reduce(
+      (sum, entry) =>
+        sum + Number(entry.duration.price ?? entry.service.price.amount ?? 0),
+      0,
+    ) * nextTotalAttendees;
     const selectedEntries = selectedServices.map(({ service, duration }) => ({
       serviceId: service.id,
       serviceName: service.name,
@@ -286,7 +369,17 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     }));
 
     const primarySelection = selectedEntries[0];
-    const addonEntries = selectedEntries.slice(1);
+    const addonEntries = selectedPrimaryExtras
+      .filter((extra) => selectedExtraIds.includes(extra.id))
+      .map((extra) => ({
+        serviceId: extra.id,
+        serviceName: extra.name,
+        durationMinutes: extra.durationMinutes,
+        price: extra.price.amount,
+        type: "extra",
+      }));
+
+    const totalBundlePrice = attendeeAdjustedServicePrice + selectedExtraPrice;
 
     sessionStorage.setItem(
       "aura-booking-draft",
@@ -296,15 +389,17 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         primaryServiceName: primarySelection.serviceName,
         primaryDurationId: primarySelection.durationId,
         primaryDurationMinutes: primarySelection.durationMinutes,
-        primaryPrice: primarySelection.price,
+        primaryPrice: attendeeAdjustedServicePrice,
         addonServices: addonEntries,
         totalDurationMinutes: bundleDurationMinutes,
-        totalPrice: bundlePrice,
+        totalPrice: totalBundlePrice,
+        totalAttendees: nextTotalAttendees,
+        selectedTotalAttendees: nextTotalAttendees,
         serviceId: primarySelection.serviceId,
         serviceName: primarySelection.serviceName,
         durationId: primarySelection.durationId,
         durationMinutes: primarySelection.durationMinutes,
-        price: bundlePrice,
+        price: totalBundlePrice,
       }),
     );
     startTransition(() => {
@@ -371,6 +466,88 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                   </span>
                 ))}
               </div>
+
+              {selectedPrimaryExtras.length > 0 ? (
+                <div className="mt-3">
+                  <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8a756c]">
+                    Available add-ons
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedPrimaryExtras.map((extra) => {
+                      const isSelectedExtra = selectedExtraIds.includes(extra.id);
+
+                      return (
+                        <button
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] transition ${
+                            isSelectedExtra
+                              ? "border-[#5f4037] bg-[#5f4037] text-white"
+                              : "border-[#d5c0b3] bg-[#fffefc] text-[#664d45] hover:border-[#79594f]"
+                          }`}
+                          key={extra.id}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleExtra(extra);
+                          }}
+                          type="button"
+                        >
+                          <span>{extra.name}</span>
+                          {extra.durationMinutes ? (
+                            <span className={isSelectedExtra ? "text-white/85" : "text-[#8e736a]"}>
+                              · {extra.durationMinutes} min
+                            </span>
+                          ) : null}
+                          <span className={isSelectedExtra ? "text-white/90" : "text-[#5f4037]"}>
+                            {extra.price.formatted}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {selectedPrimary ? (
+                <div className="mt-4 rounded-[1rem] border border-[#d9c5bb] bg-[#fffdfb] p-3">
+                  <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8a756c]">
+                    Total Attendees
+                  </p>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-black text-[#352d2a]">
+                        Please select how many people are coming
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-lg font-bold text-[#352d2a] transition hover:border-[#79594f] disabled:cursor-not-allowed disabled:opacity-45"
+                          disabled={effectiveTotalAttendees <= minCapacity}
+                          onClick={() =>
+                            setTotalAttendees((current) => clampAttendees(current - 1, minCapacity, maxCapacity))
+                          }
+                          type="button"
+                        >
+                          −
+                        </button>
+                        <div className="flex h-10 min-w-14 items-center justify-center rounded-full border border-[#352d2a] bg-[#352d2a] px-4 text-lg font-black text-white">
+                          {effectiveTotalAttendees}
+                        </div>
+                        <button
+                          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-lg font-bold text-[#352d2a] transition hover:border-[#79594f] disabled:cursor-not-allowed disabled:opacity-45"
+                          disabled={effectiveTotalAttendees >= maxCapacity}
+                          onClick={() =>
+                            setTotalAttendees((current) => clampAttendees(current + 1, minCapacity, maxCapacity))
+                          }
+                          type="button"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a756c]">
+                      Max capacity: {maxCapacity}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d8b7ab] bg-[#fffdfb]/90 px-2.5 py-1.5 text-[11px] font-medium text-[#4f413d]">
@@ -520,6 +697,24 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                   <p className="mt-3 text-sm leading-6 text-[#746760]">
                                     {service.shortDescription}
                                   </p>
+                                ) : null}
+
+                                {service.extras && service.extras.length > 0 ? (
+                                  <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {service.extras.slice(0, 3).map((extra) => (
+                                      <span
+                                        className="inline-flex items-center rounded-full border border-[#d9bdb2] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5a453d]"
+                                        key={extra.id}
+                                      >
+                                        {extra.name}
+                                      </span>
+                                    ))}
+                                    {service.extras.length > 3 ? (
+                                      <span className="inline-flex items-center rounded-full border border-[#d9bdb2] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5a453d]">
+                                        +{service.extras.length - 3}
+                                      </span>
+                                    ) : null}
+                                  </div>
                                 ) : null}
 
                                 <div className="mt-3 flex items-center justify-between gap-3 text-sm text-[#746760]">

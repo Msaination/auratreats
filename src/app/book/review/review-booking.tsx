@@ -99,6 +99,29 @@ export function ReviewBooking({
   );
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const draft = readBookingDraft();
+  const addonServices = Array.isArray(draft.addonServices)
+    ? (draft.addonServices as Array<Record<string, unknown>>)
+    : [];
+  const totalDurationMinutes = Number(
+    draft.totalDurationMinutes ?? draft.durationMinutes ?? review.service.duration,
+  );
+  const totalAttendees = Number(
+    draft.totalAttendees ?? draft.selectedTotalAttendees ?? 1,
+  );
+  const totalAmount = Number(
+    draft.totalPrice ?? draft.price ?? review.total.amount ?? 0,
+  );
+  const addonTotal = addonServices.reduce(
+    (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+    0,
+  );
+  const primaryServicePrice = Number(
+    draft.primaryPrice ??
+      Math.max(0, totalAmount - addonTotal) ??
+      review.total.amount ??
+      0,
+  );
   const appointmentDate = availability.dates[0].date;
   const detailsParams = new URLSearchParams({
     serviceId: String(review.service.id),
@@ -149,6 +172,12 @@ export function ReviewBooking({
           startDate: appointmentDate,
           startMinutes: slot.startMinutes,
           customer,
+          addonServices: draft.addonServices ?? [],
+          totalAttendees,
+          totalPrice: Number(draft.totalPrice ?? draft.price ?? review.total.amount ?? 0),
+          totalDurationMinutes: Number(
+            draft.totalDurationMinutes ?? draft.durationMinutes ?? review.service.duration,
+          ),
           paymentMethod,
           idempotencyKey: crypto.randomUUID(),
           returnUrl: location.href,
@@ -232,6 +261,10 @@ export function ReviewBooking({
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Therapist</dt>
               <dd className="mt-1 font-semibold text-[#493d38]">{availability.therapist.name}</dd>
             </div>
+            <div>
+              <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Number of attendees</dt>
+              <dd className="mt-1 font-semibold text-[#493d38]">{totalAttendees}</dd>
+            </div>
             <div className="sm:col-span-2">
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Date &amp; time</dt>
               <dd className="mt-1 font-semibold text-[#493d38]">
@@ -240,6 +273,39 @@ export function ReviewBooking({
             </div>
           </dl>
         </section>
+
+        {addonServices.length ? (
+          <section aria-labelledby="add-ons-heading">
+            <div className="flex items-center justify-between gap-4 border-b border-[#cbbdb6] pb-4">
+              <h2 id="add-ons-heading" className="font-serif text-2xl">Add-ons</h2>
+            </div>
+            <div className="space-y-3 py-6">
+              {addonServices.map((item, index) => {
+                const serviceName = String(item.serviceName ?? item.name ?? "Add-on");
+                const durationMinutes = Number(item.durationMinutes ?? 0);
+                const price = Number(item.price ?? item.amount ?? 0);
+
+                return (
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/60 px-3 py-2 text-sm"
+                    key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
+                  >
+                    <span className="font-medium text-[#493d38]">{serviceName}</span>
+                    <div className="flex items-center gap-3 text-[#746760]">
+                      <span>{durationMinutes} min</span>
+                      <span className="font-semibold text-[#5f4037]">
+                        {new Intl.NumberFormat("en-ZA", {
+                          style: "currency",
+                          currency: "ZAR",
+                        }).format(price)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         <section aria-labelledby="customer-heading">
           <div className="flex items-center justify-between gap-4 border-b border-[#cbbdb6] pb-4">
@@ -329,12 +395,53 @@ export function ReviewBooking({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a756c]">Total</p>
         <div className="mt-5 flex items-end justify-between gap-4 border-b border-[#d9cec8] pb-5">
           <span className="text-sm text-[#746760]">Appointment total</span>
-          <strong className="font-serif text-3xl font-normal text-[#352d2a]">{review.total.formatted}</strong>
+          <strong className="font-serif text-3xl font-normal text-[#352d2a]">
+            {new Intl.NumberFormat("en-ZA", {
+              style: "currency",
+              currency: "ZAR",
+            }).format(totalAmount)}
+          </strong>
         </div>
         <p aria-live="polite" className="mt-6 min-h-10 text-center text-xs leading-5 text-[#786b65]">
           {checkoutError ||
             "Your appointment is booked when you confirm below."}
         </p>
+        <div className="mt-4 rounded-[1rem] border border-[#d9cec8] bg-white/60 p-3 text-sm text-[#746760]">
+          <div className="flex items-center justify-between">
+            <span>Services</span>
+            <span>{totalDurationMinutes} min</span>
+          </div>
+          <div className="mt-3 space-y-2 border-t border-[#d9cec8] pt-3">
+            <div className="flex items-center justify-between gap-3 text-[#493d38]">
+              <span className="font-medium">{review.service.name}</span>
+              <span className="font-semibold text-[#5f4037]">
+                {new Intl.NumberFormat("en-ZA", {
+                  style: "currency",
+                  currency: "ZAR",
+                }).format(primaryServicePrice)}
+              </span>
+            </div>
+            {addonServices.map((item, index) => {
+              const serviceName = String(item.serviceName ?? item.name ?? "Add-on");
+              const price = Number(item.price ?? item.amount ?? 0);
+
+              return (
+                <div
+                  className="flex items-center justify-between gap-3 text-[#493d38]"
+                  key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
+                >
+                  <span className="font-medium">{serviceName}</span>
+                  <span className="font-semibold text-[#5f4037]">
+                    {new Intl.NumberFormat("en-ZA", {
+                      style: "currency",
+                      currency: "ZAR",
+                    }).format(price)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         <button
           className="mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
           disabled={!paymentMethod || isStartingCheckout}

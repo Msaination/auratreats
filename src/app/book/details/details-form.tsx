@@ -1,9 +1,14 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useSyncExternalStore, useTransition } from "react";
+import {
+  type FormEvent,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import type {
   AvailabilityCatalog,
   AvailabilitySlot,
@@ -85,6 +90,7 @@ export function DetailsForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [, setDraftVersion] = useState(0);
   const serializedDraft = useSyncExternalStore(
     subscribeToBookingDraft,
     getBookingDraftSnapshot,
@@ -111,6 +117,9 @@ export function DetailsForm({
   const totalPrice = Number(
     storedDraft?.totalPrice ?? storedDraft?.price ?? 0,
   );
+  const totalAttendees = Number(
+    storedDraft?.totalAttendees ?? storedDraft?.selectedTotalAttendees ?? 1,
+  );
   const storedCustomer =
     storedDraft?.customer &&
     typeof storedDraft.customer === "object" &&
@@ -124,6 +133,44 @@ export function DetailsForm({
     duration: String(primaryDurationMinutes),
     startDate: appointmentDate,
   });
+
+  function removeAddonService(serviceId: number) {
+    const draft = readBookingDraft();
+    const currentAddonServices = Array.isArray(draft.addonServices)
+      ? (draft.addonServices as Array<Record<string, unknown>>)
+      : [];
+    const nextAddonServices = currentAddonServices.filter(
+      (item) => Number(item.serviceId ?? item.id ?? 0) !== serviceId,
+    );
+    const primaryDurationMinutesFromDraft = Number(
+      draft.primaryDurationMinutes ?? draft.durationMinutes ?? catalog.duration,
+    );
+    const primaryPriceFromDraft = Number(
+      draft.primaryPrice ?? draft.price ?? 0,
+    );
+    const nextDurationMinutes =
+      primaryDurationMinutesFromDraft +
+      nextAddonServices.reduce(
+        (sum, item) => sum + Number(item.durationMinutes ?? 0),
+        0,
+      );
+    const nextPrice =
+      primaryPriceFromDraft +
+      nextAddonServices.reduce((sum, item) => sum + Number(item.price ?? item.amount ?? 0), 0);
+
+    sessionStorage.setItem(
+      "aura-booking-draft",
+      JSON.stringify({
+        ...draft,
+        addonServices: nextAddonServices,
+        totalDurationMinutes: nextDurationMinutes,
+        totalPrice: nextPrice,
+        durationMinutes: nextDurationMinutes,
+        price: nextPrice,
+      }),
+    );
+    setDraftVersion((value) => value + 1);
+  }
 
   function saveDetails(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -174,6 +221,12 @@ export function DetailsForm({
         addonServices: storedAddonServices,
         totalDurationMinutes: totalDurationMinutesFromDraft,
         totalPrice: totalPriceFromDraft,
+        totalAttendees: Number(
+          draft.totalAttendees ?? draft.selectedTotalAttendees ?? totalAttendees,
+        ),
+        selectedTotalAttendees: Number(
+          draft.totalAttendees ?? draft.selectedTotalAttendees ?? totalAttendees,
+        ),
         serviceId: primaryServiceIdFromDraft,
         serviceName: primaryServiceNameFromDraft,
         durationMinutes: primaryDurationMinutesFromDraft,
@@ -307,19 +360,38 @@ export function DetailsForm({
                 Optional add-ons
               </dt>
               <dd className="mt-2 space-y-2">
-                {addonServices.map((item, index) => (
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/50 px-3 py-2 text-sm"
-                    key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
-                  >
-                    <span className="font-medium text-[#493d38]">
-                      {String(item.serviceName ?? item.name ?? "Add-on")}
-                    </span>
-                    <span className="text-[#746760]">
-                      {Number(item.durationMinutes ?? 0)} min
-                    </span>
-                  </div>
-                ))}
+                {addonServices.map((item, index) => {
+                  const serviceId = Number(item.serviceId ?? item.id ?? 0);
+                  const serviceName = String(item.serviceName ?? item.name ?? "Add-on");
+                  const durationMinutes = Number(item.durationMinutes ?? 0);
+                  const price = Number(item.price ?? item.amount ?? 0);
+
+                  return (
+                    <div
+                      className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/50 px-3 py-2 text-sm"
+                      key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
+                    >
+                      <div className="flex min-w-0 items-center gap-2 text-[#493d38]">
+                        <span className="truncate font-medium">{serviceName}</span>
+                        <span className="text-[#746760]">{durationMinutes} min</span>
+                        <span className="font-semibold text-[#5f4037]">
+                          {new Intl.NumberFormat("en-ZA", {
+                            style: "currency",
+                            currency: "ZAR",
+                          }).format(price)}
+                        </span>
+                      </div>
+                      <button
+                        aria-label={`Remove ${serviceName}`}
+                        className="inline-flex size-6 items-center justify-center rounded-full bg-[#5f4037] text-white transition hover:bg-[#43332f]"
+                        onClick={() => removeAddonService(serviceId)}
+                        type="button"
+                      >
+                        <X aria-hidden="true" className="size-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </dd>
             </div>
           ) : null}

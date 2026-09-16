@@ -10,6 +10,17 @@ export type ServiceDuration = {
   formattedPrice: string;
 };
 
+export type ServiceExtra = {
+  id: number;
+  name: string;
+  shortDescription: string;
+  durationMinutes: number;
+  price: {
+    amount: number;
+    formatted: string;
+  };
+};
+
 export type LatePointService = {
   id: number;
   categoryId: number;
@@ -17,6 +28,8 @@ export type LatePointService = {
   shortDescription: string;
   imageUrl: string | null;
   durationMinutes: number;
+  capacityMin: number;
+  capacityMax: number;
   price: {
     amount: number;
     formatted: string;
@@ -25,6 +38,7 @@ export type LatePointService = {
     isVariable: boolean;
   };
   durations: ServiceDuration[];
+  extras?: ServiceExtra[];
 };
 
 export type ServiceCategory = {

@@ -234,19 +234,29 @@ export function BookingConfirmation() {
                 <div className="flex-1">
                   <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Optional add-ons</p>
                   <div className="mt-2 space-y-2">
-                    {addonServices.map((item, index) => (
-                      <div
-                        className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/60 px-3 py-2 text-sm"
-                        key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
-                      >
-                        <span className="font-medium text-[#493d38]">
-                          {String(item.serviceName ?? item.name ?? "Add-on")}
-                        </span>
-                        <span className="text-[#746760]">
-                          {Number(item.durationMinutes ?? 0)} min
-                        </span>
-                      </div>
-                    ))}
+                    {addonServices.map((item, index) => {
+                      const serviceName = String(item.serviceName ?? item.name ?? "Add-on");
+                      const durationMinutes = Number(item.durationMinutes ?? 0);
+                      const addonPrice = Number(item.price ?? item.amount ?? 0);
+
+                      return (
+                        <div
+                          className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/60 px-3 py-2 text-sm"
+                          key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
+                        >
+                          <span className="font-medium text-[#493d38]">{serviceName}</span>
+                          <div className="flex items-center gap-2 text-[#746760]">
+                            <span>{durationMinutes} min</span>
+                            <span className="font-semibold text-[#5f4037]">
+                              {new Intl.NumberFormat("en-ZA", {
+                                style: "currency",
+                                currency: "ZAR",
+                              }).format(addonPrice)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
