@@ -307,10 +307,10 @@ export function DetailsForm({
                 Optional add-ons
               </dt>
               <dd className="mt-2 space-y-2">
-                {addonServices.map((item) => (
+                {addonServices.map((item, index) => (
                   <div
                     className="flex items-center justify-between gap-3 rounded-full border border-[#d9cec8] bg-white/50 px-3 py-2 text-sm"
-                    key={String(item.serviceId ?? item.id ?? item.name ?? Math.random())}
+                    key={String(item.serviceId ?? item.id ?? item.name ?? `addon-${index}`)}
                   >
                     <span className="font-medium text-[#493d38]">
                       {String(item.serviceName ?? item.name ?? "Add-on")}
