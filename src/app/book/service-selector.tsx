@@ -19,7 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDeferredValue, useState, useTransition } from "react";
+import { useDeferredValue, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type {
@@ -66,19 +66,22 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
-  const [selectedServices, setSelectedServices] = useState<Selection[]>(() => {
+  const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
+
+  useEffect(() => {
     const draft = readBookingDraft();
     const draftSelections = Array.isArray(draft.selectedServices)
       ? (draft.selectedServices as Array<Record<string, unknown>>)
       : [];
 
     if (!draftSelections.length) {
-      return [];
+      setSelectedServices([]);
+      return;
     }
 
     const allServices = categories.flatMap((category) => category.services);
 
-    return draftSelections
+    const restoredSelections = draftSelections
       .map((entry) => {
         const service = allServices.find(
           (candidate) => candidate.id === Number(entry.serviceId),
@@ -101,12 +104,13 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         return { service, duration } satisfies Selection;
       })
       .filter((entry): entry is Selection => entry !== null);
-  });
+
+    setSelectedServices(restoredSelections);
+  }, [categories]);
   const [isPending, startTransition] = useTransition();
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const router = useRouter();
   const selectedPrimary = selectedServices[0] ?? null;
-  const selectedAddOns = selectedServices.slice(1);
 
   const bundleDurationMinutes = selectedServices.reduce(
     (sum, entry) => sum + entry.duration.durationMinutes,
@@ -173,50 +177,15 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     };
 
     setSelectedServices((current) => {
-      const primarySelection = current[0] ?? null;
       const existingIndex = current.findIndex(
         (candidate) => candidate.service.id === service.id,
       );
-
-      if (primarySelection && primarySelection.service.id === service.id) {
-        return [];
-      }
-
-      if (primarySelection && existingIndex === -1) {
-        return current;
-      }
 
       if (existingIndex >= 0) {
         return current.filter((candidate) => candidate.service.id !== service.id);
       }
 
       return [{ service, duration }];
-    });
-  }
-
-  function toggleAddOn(service: LatePointService) {
-    if (!selectedPrimary || selectedPrimary.service.id === service.id) {
-      return;
-    }
-
-    const duration = service.durations[0] ?? {
-      id: "default",
-      name: "",
-      durationMinutes: service.durationMinutes,
-      price: service.price.amount,
-      formattedPrice: service.price.formatted,
-    };
-
-    setSelectedServices((current) => {
-      const existingIndex = current.findIndex(
-        (candidate) => candidate.service.id === service.id,
-      );
-
-      if (existingIndex > 0) {
-        return current.filter((candidate) => candidate.service.id !== service.id);
-      }
-
-      return [...current, { service, duration }];
     });
   }
 
@@ -380,38 +349,27 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                 Selected treatment
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                {selectedServices.map(({ service, duration }, index) => {
-                  const isPrimarySelection = index === 0;
-
-                  return (
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b7ab] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5f4037]"
-                      key={service.id}
-                    >
-                      <span>
-                        {isPrimarySelection
-                          ? `${service.name} · ${duration.durationMinutes} min`
-                          : `${service.name} · ${duration.durationMinutes} min`}
-                      </span>
-                      <button
-                        aria-label={`Remove ${service.name}`}
-                        className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#5f4037] text-white transition hover:bg-[#43332f]"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          removeSelectedService(service.id);
-                        }}
-                        type="button"
-                      >
-                        <X aria-hidden="true" className="size-2.5" />
-                      </button>
+                {selectedServices.map(({ service, duration }) => (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[#d8b7ab] bg-[#fffaf7] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#5f4037]"
+                    key={service.id}
+                  >
+                    <span>
+                      {`${service.name} · ${duration.durationMinutes} min`}
                     </span>
-                  );
-                })}
-                {!selectedAddOns.length ? (
-                  <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-[#8a756c]">
-                    No add-ons selected
+                    <button
+                      aria-label={`Remove ${service.name}`}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#5f4037] text-white transition hover:bg-[#43332f]"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        removeSelectedService(service.id);
+                      }}
+                      type="button"
+                    >
+                      <X aria-hidden="true" className="size-2.5" />
+                    </button>
                   </span>
-                ) : null}
+                ))}
               </div>
             </div>
 
@@ -516,10 +474,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                           ) ?? null;
                         const isSelected = selectedItem !== null;
                         const isPrimary = selectedPrimary?.service.id === service.id;
-                        const isAddOn =
-                          !!selectedPrimary &&
-                          service.id !== selectedPrimary.service.id &&
-                          selectedAddOns.some((candidate) => candidate.service.id === service.id);
+                        const isAddOn = false;
 
                         return (
                           <Card
@@ -578,25 +533,6 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                 </div>
                               </CardContent>
                             </button>
-
-                            {selectedPrimary && !isPrimary ? (
-                              <div className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
-                                <button
-                                  className={`inline-flex w-full items-center justify-center rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
-                                    isAddOn
-                                      ? "border-[#5f4037] bg-[#5f4037] text-white"
-                                      : "border-[#d4c1b9] bg-white text-[#4e433f] hover:border-[#79594f] hover:bg-[#fffdfb]"
-                                  }`}
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    toggleAddOn(service);
-                                  }}
-                                  type="button"
-                                >
-                                  {isAddOn ? "Remove add-on" : "Add as add-on"}
-                                </button>
-                              </div>
-                            ) : null}
 
                             {isSelected && !isPrimary && service.durations.length > 1 ? (
                               <CardFooter className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
