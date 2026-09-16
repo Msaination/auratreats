@@ -100,6 +100,13 @@ export function DetailsForm({
   const addonServices = Array.isArray(storedDraft?.addonServices)
     ? (storedDraft.addonServices as Array<Record<string, unknown>>)
     : [];
+  const addonTotal = Number(
+    storedDraft?.addonTotal ??
+      addonServices.reduce(
+        (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+        0,
+      ),
+  );
   const primaryServiceId = Number(
     storedDraft?.primaryServiceId ?? storedDraft?.serviceId ?? catalog.service.id,
   );
@@ -114,8 +121,14 @@ export function DetailsForm({
   const totalDurationMinutes = Number(
     storedDraft?.totalDurationMinutes ?? primaryDurationMinutes,
   );
+  const primaryPrice = Number(
+    storedDraft?.primaryPrice ??
+      Math.max(0, Number(storedDraft?.totalPrice ?? storedDraft?.price ?? 0) - addonTotal),
+  );
   const totalPrice = Number(
-    storedDraft?.totalPrice ?? storedDraft?.price ?? 0,
+    storedDraft?.totalPrice ??
+      storedDraft?.price ??
+      primaryPrice + addonTotal,
   );
   const totalAttendees = Number(
     storedDraft?.totalAttendees ?? storedDraft?.selectedTotalAttendees ?? 1,
@@ -146,7 +159,12 @@ export function DetailsForm({
       draft.primaryDurationMinutes ?? draft.durationMinutes ?? catalog.duration,
     );
     const primaryPriceFromDraft = Number(
-      draft.primaryPrice ?? draft.price ?? 0,
+      draft.primaryPrice ??
+        Math.max(0, Number(draft.totalPrice ?? draft.price ?? 0) - Number(draft.addonTotal ?? 0)),
+    );
+    const nextAddOnTotal = nextAddonServices.reduce(
+      (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+      0,
     );
     const nextDurationMinutes =
       primaryDurationMinutesFromDraft +
@@ -154,14 +172,13 @@ export function DetailsForm({
         (sum, item) => sum + Number(item.durationMinutes ?? 0),
         0,
       );
-    const nextPrice =
-      primaryPriceFromDraft +
-      nextAddonServices.reduce((sum, item) => sum + Number(item.price ?? item.amount ?? 0), 0);
+    const nextPrice = primaryPriceFromDraft + nextAddOnTotal;
 
     sessionStorage.setItem(
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
+        addonTotal: nextAddOnTotal,
         addonServices: nextAddonServices,
         totalDurationMinutes: nextDurationMinutes,
         totalPrice: nextPrice,
@@ -207,8 +224,14 @@ export function DetailsForm({
     const totalDurationMinutesFromDraft = Number(
       draft.totalDurationMinutes ?? primaryDurationMinutesFromDraft,
     );
+    const addonTotalFromDraft = storedAddonServices.reduce(
+      (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+      0,
+    );
     const totalPriceFromDraft = Number(
-      draft.totalPrice ?? draft.price ?? 0,
+      draft.totalPrice ??
+        draft.price ??
+        Number(draft.primaryPrice ?? 0) + addonTotalFromDraft,
     );
 
     sessionStorage.setItem(
@@ -218,6 +241,7 @@ export function DetailsForm({
         primaryServiceId: primaryServiceIdFromDraft,
         primaryServiceName: primaryServiceNameFromDraft,
         primaryDurationMinutes: primaryDurationMinutesFromDraft,
+        addonTotal: addonTotalFromDraft,
         addonServices: storedAddonServices,
         totalDurationMinutes: totalDurationMinutesFromDraft,
         totalPrice: totalPriceFromDraft,

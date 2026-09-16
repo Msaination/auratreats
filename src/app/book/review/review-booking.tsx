@@ -61,6 +61,21 @@ function readBookingDraft(): Record<string, unknown> {
   }
 }
 
+function isSlotStillAvailable(
+  availability: AvailabilityCatalog,
+  slot: AvailabilitySlot,
+  therapistId: number,
+) {
+  return availability.dates.some((day) =>
+    day.slots.some(
+      (candidate) =>
+        candidate.startMinutes === slot.startMinutes &&
+        candidate.endMinutes === slot.endMinutes &&
+        candidate.therapistIds.includes(therapistId),
+    ),
+  );
+}
+
 function subscribeToBookingDraft() {
   return () => {};
 }
@@ -122,20 +137,30 @@ export function ReviewBooking({
   const totalAttendees = Number(
     draft.totalAttendees ?? draft.selectedTotalAttendees ?? 1,
   );
-  const totalAmount = Number(
-    draft.totalPrice ?? draft.price ?? review.total.amount ?? 0,
+  const addonTotal = Number(
+    draft.addonTotal ??
+      addonServices.reduce(
+        (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+        0,
+      ),
   );
-  const addonTotal = addonServices.reduce(
-    (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
-    0,
-  );
+  const reviewTotalAmount = Number(review.total.amount ?? 0);
   const primaryServicePrice = Number(
     draft.primaryPrice ??
-      Math.max(0, totalAmount - addonTotal) ??
-      review.total.amount ??
-      0,
+      Math.max(0, Number(draft.totalPrice ?? draft.price ?? reviewTotalAmount) - addonTotal),
+  );
+  const computedTotalAmount = primaryServicePrice + addonTotal;
+  const totalAmount = Number(
+    draft.totalPrice ??
+      draft.price ??
+      (Number.isFinite(computedTotalAmount) ? computedTotalAmount : reviewTotalAmount),
   );
   const appointmentDate = availability.dates[0].date;
+  const selectedSlotStillAvailable = isSlotStillAvailable(
+    availability,
+    slot,
+    Number(availability.therapist.id),
+  );
   const detailsParams = new URLSearchParams({
     serviceId: String(review.service.id),
     therapistId: String(availability.therapist.id),
@@ -166,6 +191,13 @@ export function ReviewBooking({
       return;
     }
 
+    if (!selectedSlotStillAvailable) {
+      setCheckoutError("This appointment time is no longer available. Please choose another time.");
+      setIsStartingCheckout(false);
+      router.push(`/book/date-time?${detailsParams}`);
+      return;
+    }
+
     const draft = readBookingDraft();
     sessionStorage.setItem(
       "aura-booking-draft",
@@ -187,7 +219,7 @@ export function ReviewBooking({
           customer,
           addonServices: draft.addonServices ?? [],
           totalAttendees,
-          totalPrice: Number(draft.totalPrice ?? draft.price ?? review.total.amount ?? 0),
+          totalPrice: totalAmount,
           totalDurationMinutes: Number(
             draft.totalDurationMinutes ?? draft.durationMinutes ?? review.service.duration,
           ),
@@ -458,7 +490,7 @@ export function ReviewBooking({
         </div>
         <button
           className="mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
-          disabled={!paymentMethod || isStartingCheckout}
+          disabled={!paymentMethod || isStartingCheckout || !selectedSlotStillAvailable}
           onClick={startCheckout}
           type="button"
         >

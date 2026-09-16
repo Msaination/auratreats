@@ -169,11 +169,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     (sum, entry) => sum + Number(entry.duration.price ?? entry.service.price.amount ?? 0),
     0,
   );
+  const primaryServiceTotal = selectedServicePrice * effectiveTotalAttendees;
   const bundleDurationMinutes =
     selectedServices.reduce((sum, entry) => sum + entry.duration.durationMinutes, 0) +
     selectedExtraDurationMinutes;
-  const bundlePrice =
-    selectedServicePrice * effectiveTotalAttendees + selectedExtraPrice;
+  const bundlePrice = primaryServiceTotal + selectedExtraPrice;
 
   const visibleCategories = categories
     .filter(
@@ -400,8 +400,8 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         price: extra.price.amount,
         type: "extra",
       }));
-
-    const totalBundlePrice = attendeeAdjustedServicePrice + selectedExtraPrice;
+    const addonTotal = addonEntries.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
+    const totalBundlePrice = attendeeAdjustedServicePrice + addonTotal;
 
     sessionStorage.setItem(
       "aura-booking-draft",
@@ -412,6 +412,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         primaryDurationId: primarySelection.durationId,
         primaryDurationMinutes: primarySelection.durationMinutes,
         primaryPrice: attendeeAdjustedServicePrice,
+        addonTotal,
         addonServices: addonEntries,
         totalDurationMinutes: bundleDurationMinutes,
         totalPrice: totalBundlePrice,
