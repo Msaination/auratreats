@@ -64,6 +64,21 @@ function getDurationLabel(duration: Pick<ServiceDuration, "name" | "durationMinu
   return customName || `${duration.durationMinutes} min`;
 }
 
+function getDurationSectionLabel(
+  service: Pick<LatePointService, "durations">,
+  isSelected: boolean,
+) {
+  const hasCustomNames = service.durations.some(
+    (duration) => (duration.name ?? "").trim().length > 0,
+  );
+
+  if (hasCustomNames) {
+    return isSelected ? "Choose option" : "Available options";
+  }
+
+  return isSelected ? "Choose duration" : "Available durations";
+}
+
 export function ServiceSelector({ categories }: ServiceCatalog) {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">(
     "all",
@@ -765,7 +780,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                               <CardFooter className="border-t border-[#eaded8] bg-[#faf3ef] p-3 sm:p-4">
                                 <div className="w-full">
                                   <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#786b65]">
-                                    {isSelected ? "Choose duration" : "Available durations"}
+                                    {getDurationSectionLabel(service, isSelected)}
                                   </p>
                                   <div className="flex flex-wrap gap-2">
                                     {service.durations.map((duration) => (
