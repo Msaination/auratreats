@@ -791,7 +791,10 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                     </span>
                   </button>
 
-                  {!isCollapsed && isWaxingParentSection && waxingSubcategories.length > 0 ? (
+                  {!isCollapsed &&
+                  isWaxingParentSection &&
+                  activeCategoryId === waxingParentId &&
+                  waxingSubcategories.length > 0 ? (
                     <div className="mb-4 flex flex-wrap gap-2">
                       {waxingSubcategories.map((subcategory) => {
                         const isActive = subcategory.id === activeWaxingSubcategoryId;
