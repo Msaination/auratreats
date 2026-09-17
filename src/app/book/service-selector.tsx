@@ -711,7 +711,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                           >
                             <button
                               aria-pressed={isSelected}
-                              className="block w-full text-left"
+                              className="block h-full w-full flex-1 text-left"
                               onClick={() => selectService(service)}
                               type="button"
                             >
