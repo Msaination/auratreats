@@ -71,6 +71,50 @@ function getServerSnapshot() {
   return "";
 }
 
+function readBookingDraft(): Record<string, unknown> {
+  try {
+    const draft = JSON.parse(
+      sessionStorage.getItem("aura-booking-draft") ?? "{}",
+    );
+
+    return draft && typeof draft === "object" && !Array.isArray(draft)
+      ? (draft as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function getDurationDisplayLabel(draft: Record<string, unknown>, fallbackMinutes: number, fallbackPrice: number) {
+  const selectedPrimary = Array.isArray(draft.selectedServices)
+    ? (draft.selectedServices as Array<Record<string, unknown>>)[0]
+    : null;
+  const durationLabel =
+    typeof selectedPrimary?.durationLabel === "string"
+      ? (selectedPrimary.durationLabel as string).trim()
+      : "";
+  const durationName =
+    typeof selectedPrimary?.durationName === "string"
+      ? (selectedPrimary.durationName as string).trim()
+      : "";
+
+  if (durationLabel) {
+    return durationLabel;
+  }
+
+  const price = Number.isFinite(fallbackPrice) ? fallbackPrice : 0;
+  const formatter = new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+  });
+
+  if (durationName) {
+    return `${durationName} · ${formatter.format(price)}`;
+  }
+
+  return `${Number.isFinite(fallbackMinutes) ? fallbackMinutes : 0} min`;
+}
+
 function parseConfirmation(value: string | null): Confirmation | null {
   if (!value) {
     return null;
@@ -115,6 +159,7 @@ export function BookingConfirmation() {
     getServerSnapshot,
   );
   const confirmation = parseConfirmation(serializedConfirmation);
+  const draft = readBookingDraft();
   const primaryServiceName =
     confirmation?.primaryServiceName ?? confirmation?.serviceName ?? "Treatment";
   const addonServices = Array.isArray(confirmation?.addonServices)
@@ -122,6 +167,11 @@ export function BookingConfirmation() {
     : [];
   const totalDurationMinutes = Number(
     confirmation?.totalDurationMinutes ?? confirmation?.duration ?? 0,
+  );
+  const primaryDurationLabel = getDurationDisplayLabel(
+    draft,
+    totalDurationMinutes,
+    Number(draft.primaryPrice ?? draft.totalPrice ?? 0),
   );
   const totalAmount =
     typeof confirmation?.total === "string" && confirmation.total.trim().length > 0
@@ -236,7 +286,7 @@ export function BookingConfirmation() {
               <div>
                 <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Primary treatment</p>
                 <p className="mt-1 font-semibold text-[#493d38]">{primaryServiceName}</p>
-                <p className="mt-1 text-sm text-[#746760]">{totalDurationMinutes} minutes</p>
+                <p className="mt-1 text-sm text-[#746760]">{primaryDurationLabel}</p>
               </div>
             </div>
 

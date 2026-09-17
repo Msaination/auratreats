@@ -84,6 +84,36 @@ function getBookingDraftSnapshot() {
   return sessionStorage.getItem("aura-booking-draft");
 }
 
+function getDurationDisplayLabel(draft: Record<string, unknown>, fallbackMinutes: number, fallbackPrice: number) {
+  const selectedPrimary = Array.isArray(draft.selectedServices)
+    ? (draft.selectedServices as Array<Record<string, unknown>>)[0]
+    : null;
+  const durationLabel =
+    typeof selectedPrimary?.durationLabel === "string"
+      ? (selectedPrimary.durationLabel as string).trim()
+      : "";
+  const durationName =
+    typeof selectedPrimary?.durationName === "string"
+      ? (selectedPrimary.durationName as string).trim()
+      : "";
+
+  if (durationLabel) {
+    return durationLabel;
+  }
+
+  const price = Number.isFinite(fallbackPrice) ? fallbackPrice : 0;
+  const formatter = new Intl.NumberFormat("en-ZA", {
+    style: "currency",
+    currency: "ZAR",
+  });
+
+  if (durationName) {
+    return `${durationName} · ${formatter.format(price)}`;
+  }
+
+  return `${Number.isFinite(fallbackMinutes) ? fallbackMinutes : 0} min`;
+}
+
 function getServerBookingDraftSnapshot() {
   return "";
 }
@@ -156,6 +186,11 @@ export function ReviewBooking({
       (Number.isFinite(computedTotalAmount) ? computedTotalAmount : reviewTotalAmount),
   );
   const appointmentDate = availability.dates[0].date;
+  const primaryDurationLabel = getDurationDisplayLabel(
+    draft,
+    Number(totalDurationMinutes ?? review.service.duration),
+    Number(primaryServicePrice ?? 0),
+  );
   const selectedSlotStillAvailable = isSlotStillAvailable(
     availability,
     slot,
@@ -301,7 +336,7 @@ export function ReviewBooking({
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Treatment</dt>
               <dd className="mt-1 font-semibold text-[#493d38]">{review.service.name}</dd>
-              <dd className="mt-1 text-sm text-[#746760]">{review.service.duration} minutes</dd>
+              <dd className="mt-1 text-sm text-[#746760]">{primaryDurationLabel}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Therapist</dt>

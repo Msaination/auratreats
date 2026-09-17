@@ -59,6 +59,11 @@ function getPriceLabel(service: LatePointService) {
   return `${service.price.isVariable ? "From " : ""}${service.price.formatted}`;
 }
 
+function getDurationLabel(duration: Pick<ServiceDuration, "name" | "durationMinutes">) {
+  const customName = (duration.name ?? "").trim();
+  return customName || `${duration.durationMinutes} min`;
+}
+
 export function ServiceSelector({ categories }: ServiceCatalog) {
   const [activeCategoryId, setActiveCategoryId] = useState<number | "all">(
     "all",
@@ -387,6 +392,8 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       serviceName: service.name,
       durationId: duration.id,
       durationMinutes: duration.durationMinutes,
+      durationName: duration.name,
+      durationLabel: `${getDurationLabel(duration)} · ${duration.formattedPrice}`,
       price: duration.price,
     }));
 
@@ -411,6 +418,8 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         primaryServiceName: primarySelection.serviceName,
         primaryDurationId: primarySelection.durationId,
         primaryDurationMinutes: primarySelection.durationMinutes,
+        primaryDurationName: primarySelection.durationName,
+        primaryDurationLabel: primarySelection.durationLabel,
         primaryPrice: attendeeAdjustedServicePrice,
         addonTotal,
         addonServices: addonEntries,
@@ -473,7 +482,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                     key={service.id}
                   >
                     <span>
-                      {`${service.name} · ${duration.durationMinutes} min`}
+                      {`${service.name} · ${getDurationLabel(duration)}`}
                     </span>
                     <button
                       aria-label={`Remove ${service.name}`}
@@ -776,7 +785,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                         type="button"
                                         variant="outline"
                                       >
-                                        {duration.durationMinutes} min · {duration.formattedPrice}
+                                        {getDurationLabel(duration)} · {duration.formattedPrice}
                                       </Button>
                                     ))}
                                   </div>
