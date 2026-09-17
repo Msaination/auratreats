@@ -126,13 +126,15 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
   const [totalAttendees, setTotalAttendees] = useState<number>(1);
-  const [activeWaxingSubcategoryId, setActiveWaxingSubcategoryId] = useState<number | null>(
-    () => waxingSubcategories[0]?.id ?? null,
-  );
+  const [activeWaxingSubcategoryId, setActiveWaxingSubcategoryId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!waxingSubcategories.length) {
       setActiveWaxingSubcategoryId(null);
+      return;
+    }
+
+    if (activeWaxingSubcategoryId === null) {
       return;
     }
 
@@ -141,7 +143,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     );
 
     if (!selectedExists) {
-      setActiveWaxingSubcategoryId(waxingSubcategories[0].id);
+      setActiveWaxingSubcategoryId(null);
     }
   }, [activeWaxingSubcategoryId, waxingSubcategories]);
 
@@ -297,6 +299,19 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     .filter((category) => category.services.length > 0);
 
   function toggleCategory(categoryId: number) {
+    const isWaxingSection = showWaxingNestedLayout && waxingParentId !== null && categoryId === waxingParentId;
+
+    if (isWaxingSection) {
+      setActiveCategoryId(waxingParentId);
+      setExpandedCategoryIds((current) => ({
+        ...Object.fromEntries(
+          Object.keys(current).map((key) => [Number(key), false]),
+        ),
+        [categoryId]: !current[categoryId],
+      }));
+      return;
+    }
+
     setExpandedCategoryIds((current) => ({
       ...current,
       [categoryId]: !current[categoryId],
@@ -334,6 +349,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
 
     return count + category.services.length;
   }, 0);
+
+  const isWaxingContentVisible =
+    !showWaxingNestedLayout ||
+    !waxingParentId ||
+    (activeCategoryId === waxingParentId && activeWaxingSubcategoryId !== null);
 
   function selectService(service: LatePointService) {
     const duration = service.durations[0] ?? {
@@ -820,7 +840,8 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                     </div>
                   ) : null}
 
-                  {!isCollapsed ? (
+                  {!isCollapsed &&
+                  (!isWaxingParentSection || isWaxingContentVisible) ? (
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       {activeWaxingServices.map((service) => {
                         const selectedItem =
