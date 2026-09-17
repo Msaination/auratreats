@@ -80,9 +80,42 @@ function getDurationSectionLabel(
 }
 
 export function ServiceSelector({ categories }: ServiceCatalog) {
-  const [activeCategoryId, setActiveCategoryId] = useState<number | "all">(
-    "all",
-  );
+  const waxingParentCategory =
+    categories.find(
+      (category) =>
+        category.name.trim().toLowerCase() === "waxing" &&
+        category.parentId === null,
+    ) ?? null;
+  const derivedWaxingParentId =
+    waxingParentCategory?.id ??
+    categories.find(
+      (category) =>
+        category.parentId !== null &&
+        ["body waxing", "intimate waxing", "face waxing"].includes(
+          category.name.trim().toLowerCase(),
+        ),
+    )?.parentId ??
+    null;
+  const waxingParentId = waxingParentCategory?.id ?? derivedWaxingParentId;
+  const waxingSubcategories =
+    categories.filter(
+      (category) =>
+        category.parentId === waxingParentId &&
+        category.services.length > 0,
+    ) ?? [];
+  const syntheticWaxingSection =
+    waxingParentId !== null && waxingSubcategories.length > 0
+      ? {
+          id: waxingParentId,
+          parentId: null,
+          name: "Waxing",
+          shortDescription: "",
+          imageUrl: null,
+          services: waxingSubcategories.flatMap((subcategory) => subcategory.services),
+        }
+      : null;
+  const showWaxingNestedLayout = syntheticWaxingSection !== null;
+  const [activeCategoryId, setActiveCategoryId] = useState<number | "all">("all");
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Record<number, boolean>>(
     () =>
       Object.fromEntries(
@@ -93,6 +126,24 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
   const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
   const [totalAttendees, setTotalAttendees] = useState<number>(1);
+  const [activeWaxingSubcategoryId, setActiveWaxingSubcategoryId] = useState<number | null>(
+    () => waxingSubcategories[0]?.id ?? null,
+  );
+
+  useEffect(() => {
+    if (!waxingSubcategories.length) {
+      setActiveWaxingSubcategoryId(null);
+      return;
+    }
+
+    const selectedExists = waxingSubcategories.some(
+      (category) => category.id === activeWaxingSubcategoryId,
+    );
+
+    if (!selectedExists) {
+      setActiveWaxingSubcategoryId(waxingSubcategories[0].id);
+    }
+  }, [activeWaxingSubcategoryId, waxingSubcategories]);
 
   useEffect(() => {
     const draft = readBookingDraft();
@@ -195,11 +246,42 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     selectedExtraDurationMinutes;
   const bundlePrice = primaryServiceTotal + selectedExtraPrice;
 
-  const visibleCategories = categories
-    .filter(
-      (category) =>
-        activeCategoryId === "all" || category.id === activeCategoryId,
-    )
+  const displayCategories =
+    showWaxingNestedLayout && syntheticWaxingSection
+      ? [
+          syntheticWaxingSection,
+          ...categories.filter(
+            (category) =>
+              category.parentId !== waxingParentId &&
+              category.id !== syntheticWaxingSection.id,
+          ),
+        ]
+      : categories;
+
+  const categoryTabs =
+    showWaxingNestedLayout && syntheticWaxingSection
+      ? [
+          syntheticWaxingSection,
+          ...categories.filter(
+            (category) =>
+              category.parentId !== waxingParentId &&
+              category.id !== syntheticWaxingSection.id,
+          ),
+        ]
+      : categories;
+
+  const visibleCategories = displayCategories
+    .filter((category) => {
+      if (showWaxingNestedLayout) {
+        return activeCategoryId === "all" || category.id === activeCategoryId;
+      }
+
+      if (waxingParentCategory && category.parentId === waxingParentCategory.id) {
+        return false;
+      }
+
+      return activeCategoryId === "all" || category.id === activeCategoryId;
+    })
     .map((category) => ({
       ...category,
       services: category.services.filter((service) => {
@@ -225,6 +307,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     setActiveCategoryId(categoryId);
 
     if (categoryId === "all") {
+      setExpandedCategoryIds((current) =>
+        Object.fromEntries(
+          Object.keys(current).map((key) => [Number(key), false]),
+        ),
+      );
       return;
     }
 
@@ -236,10 +323,17 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     }));
   }
 
-  const visibleTotal = visibleCategories.reduce(
-    (count, category) => count + category.services.length,
-    0,
-  );
+  const visibleTotal = visibleCategories.reduce((count, category) => {
+    if (showWaxingNestedLayout && syntheticWaxingSection && category.id === syntheticWaxingSection.id) {
+      const selectedSubcategory = waxingSubcategories.find(
+        (subcategory) => subcategory.id === activeWaxingSubcategoryId,
+      );
+
+      return count + (selectedSubcategory?.services.length ?? 0);
+    }
+
+    return count + category.services.length;
+  }, 0);
 
   function selectService(service: LatePointService) {
     const duration = service.durations[0] ?? {
@@ -629,7 +723,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         >
           <span>All</span>
         </button>
-        {categories.map((category) => {
+        {categoryTabs.map((category) => {
           const CategoryIcon = getCategoryIcon(category.name);
 
           return (
@@ -662,6 +756,14 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
             {visibleCategories.map((category) => {
               const isCollapsed = expandedCategoryIds[category.id] === false;
 
+              const isWaxingParentSection =
+                waxingParentId !== null && category.id === waxingParentId;
+              const activeWaxingServices = isWaxingParentSection
+                ? (waxingSubcategories.find(
+                    (subcategory) => subcategory.id === activeWaxingSubcategoryId,
+                  )?.services ?? [])
+                : category.services;
+
               return (
                 <section aria-labelledby={`category-${category.id}`} key={category.id}>
                   <button
@@ -677,7 +779,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                         {category.name}
                       </h3>
                       <span className="rounded-full border border-[#e0d1c8] bg-[#fffdfb] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8d7970]">
-                        {category.services.length} service{category.services.length === 1 ? "" : "s"}
+                        {isWaxingParentSection ? activeWaxingServices.length : category.services.length} service{(isWaxingParentSection ? activeWaxingServices.length : category.services.length) === 1 ? "" : "s"}
                       </span>
                     </div>
                     <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-[#5f4037]">
@@ -689,9 +791,35 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                     </span>
                   </button>
 
+                  {!isCollapsed && isWaxingParentSection && waxingSubcategories.length > 0 ? (
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {waxingSubcategories.map((subcategory) => {
+                        const isActive = subcategory.id === activeWaxingSubcategoryId;
+
+                        return (
+                          <button
+                            className={`inline-flex h-10 items-center rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
+                              isActive
+                                ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
+                                : "border-[#d5c1b8] bg-white text-[#5f4037] hover:border-[#79594f]"
+                            }`}
+                            key={subcategory.id}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setActiveWaxingSubcategoryId(subcategory.id);
+                            }}
+                            type="button"
+                          >
+                            {subcategory.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+
                   {!isCollapsed ? (
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      {category.services.map((service) => {
+                      {activeWaxingServices.map((service) => {
                         const selectedItem =
                           selectedServices.find(
                             (candidate) => candidate.service.id === service.id,
