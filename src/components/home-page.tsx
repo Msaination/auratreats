@@ -350,10 +350,16 @@ export function Footer({ content }: HomePageProps) {
             <img src="/images/AuraLogo.png" alt="Aura Spa" className="spa-brand-logo spa-brand-logo-footer" />
           </div>
           <p>{content.footer.tagline}</p>
-          <div className="spa-footer-address">
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=King%27s+Palace+Hotel+Donkerhoek+Road+Rustenburg"
+            target="_blank"
+            rel="noreferrer"
+            className="spa-footer-address"
+            aria-label="Open Aura Spa address in Google Maps"
+          >
             <MapPin aria-hidden="true" className="spa-contact-icon" />
             <span>King&apos;s Palace Hotel, Donkerhoek Road, Rustenburg</span>
-          </div>
+          </a>
         </div>
 
         <div>
