@@ -940,6 +940,20 @@ body {
   height: 1.7rem;
 }
 
+@media (max-width: 640px) {
+  .spa-whatsapp-chat {
+    right: 0.9rem;
+    bottom: 0.9rem;
+    width: 3.15rem;
+    height: 3.15rem;
+  }
+
+  .spa-whatsapp-chat svg {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+}
+
 @media (max-width: 980px) {
   .spa-header-inner {
     grid-template-columns: 1fr;
