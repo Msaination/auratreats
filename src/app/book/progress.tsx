@@ -10,8 +10,9 @@ type ProgressStep = {
 export function BookingProgress({ steps }: { steps: ProgressStep[] }) {
   return (
     <nav aria-label="Booking progress" className="border-b border-[#e5d8d2] bg-[#f8f2ef]">
-      <ol className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-5 py-4 sm:px-8">
-        {steps.map((step, index) => {
+      <div className="mx-auto max-w-7xl">
+        <ol className="mx-auto flex items-center justify-center gap-2 overflow-x-auto px-5 py-3 sm:px-8">
+          {steps.map((step, index) => {
           const stepNumber = index + 1;
           const content = (
             <>
@@ -29,7 +30,7 @@ export function BookingProgress({ steps }: { steps: ProgressStep[] }) {
               </span>
               <span
                 className={[
-                  "text-[10px] font-semibold uppercase tracking-[0.24em] whitespace-nowrap",
+                  "text-[9px] font-semibold uppercase tracking-[0.22em] whitespace-nowrap sm:text-[10px]",
                   step.current
                     ? "text-[#352d2a]"
                     : step.complete
@@ -45,19 +46,20 @@ export function BookingProgress({ steps }: { steps: ProgressStep[] }) {
           return (
             <li className="flex shrink-0 items-center" key={step.label}>
               {step.href && !step.current ? (
-                <Link className="flex items-center gap-3" href={step.href}>
+                <Link className="flex items-center gap-2 sm:gap-3" href={step.href}>
                   {content}
                 </Link>
               ) : (
-                <span className="flex items-center gap-3">{content}</span>
+                <span className="flex items-center gap-2 sm:gap-3">{content}</span>
               )}
               {index < steps.length - 1 ? (
-                <span className="mx-2 hidden h-px w-8 bg-[#d9c5bd] md:block" aria-hidden="true" />
+                <span className="mx-1 hidden h-px w-6 bg-[#d9c5bd] md:block" aria-hidden="true" />
               ) : null}
             </li>
           );
         })}
-      </ol>
+        </ol>
+      </div>
     </nav>
   );
 }

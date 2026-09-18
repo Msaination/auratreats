@@ -19,7 +19,7 @@ export default async function BookPage() {
       <header className="border-b border-[#d9cec7] bg-[#f8f4f1]/90 backdrop-blur-sm">
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
           <Link className="flex items-center" href="/">
-            <img src="/AuraLogo.png" alt="Aura Spa logo" className="h-14 w-auto object-contain sm:h-16" />
+            <img src="/images/AuraLogo.png" alt="Aura Spa logo" className="h-14 w-auto object-contain sm:h-16" />
           </Link>
           <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#806b62] sm:text-xs">
             Book an appointment

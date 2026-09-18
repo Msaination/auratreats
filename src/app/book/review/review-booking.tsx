@@ -409,7 +409,9 @@ export function ReviewBooking({
             </div>
             {customer.notes ? (
               <div className="sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Comments</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
+                  Special Instructions for {availability.therapist.name}
+                </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#746760]">{customer.notes}</p>
               </div>
             ) : null}
@@ -419,7 +421,9 @@ export function ReviewBooking({
         <section aria-labelledby="payment-heading">
           <div className="border-b border-[#cbbdb6] pb-4">
             <h2 id="payment-heading" className="font-serif text-2xl">Payment method</h2>
-            <p className="mt-2 text-sm text-[#746760]">Banking details will be sent via email.</p>
+            <p className="mt-2 text-sm text-[#746760]">
+              Use your full name as the payment reference and send proof of payment when booking.
+            </p>
           </div>
           {review.paymentMethods.length ? (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -455,7 +459,7 @@ export function ReviewBooking({
                       </span>
                       <span className="mt-1 block text-sm leading-5 text-[#746760]">
                         {isPayLater || isBankTransfer
-                          ? "Booking will automatically be cancelled if payment is not reflected or processed in our system."
+                          ? "FNB • Aura Spa • Account 63218435089 • Branch 202009. Booking will automatically be cancelled if payment is not reflected or processed in our system."
                           : "Pay securely online through WooCommerce checkout."}
                       </span>
                     </span>
@@ -469,6 +473,19 @@ export function ReviewBooking({
               No payment methods are currently enabled. Please contact Aura Spa.
             </p>
           )}
+
+          <div className="mt-5 rounded-[1.25rem] border border-[#d9cec8] bg-[#f9f3f1] p-4 text-sm leading-6 text-[#524844]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6f5047]">EFT banking details</p>
+            <ul className="mt-3 space-y-1">
+              <li><span className="font-medium text-[#493d38]">Bank:</span> FNB</li>
+              <li><span className="font-medium text-[#493d38]">Account name:</span> Aura Spa</li>
+              <li><span className="font-medium text-[#493d38]">Account number:</span> 63218435089</li>
+              <li><span className="font-medium text-[#493d38]">Branch code:</span> 202009</li>
+            </ul>
+            <p className="mt-3 text-[#5f4d48]">
+              Use your name as the payment reference and send proof of payment when booking.
+            </p>
+          </div>
         </section>
       </div>
 

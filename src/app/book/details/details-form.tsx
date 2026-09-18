@@ -285,19 +285,25 @@ export function DetailsForm({
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
       <form className="min-w-0" onSubmit={saveDetails}>
         <div className="grid gap-5 sm:grid-cols-2">
-          {fields.map((field) => (
-            <label
-              className={field.type === "textarea" ? "sm:col-span-2" : ""}
-              key={field.name}
-            >
-              <span className="mb-2 block text-sm font-semibold text-[#493d38]">
-                {field.label}
-                {field.required ? (
-                  <span aria-hidden="true" className="ml-1 text-[#8a5145]">
-                    *
-                  </span>
-                ) : null}
-              </span>
+          {fields.map((field) => {
+            const fieldLabel =
+              field.name === "notes"
+                ? `Special Instructions for ${catalog.therapist.name}`
+                : field.label;
+
+            return (
+              <label
+                className={field.type === "textarea" ? "sm:col-span-2" : ""}
+                key={field.name}
+              >
+                <span className="mb-2 block text-sm font-semibold text-[#493d38]">
+                  {fieldLabel}
+                  {field.required ? (
+                    <span aria-hidden="true" className="ml-1 text-[#8a5145]">
+                      *
+                    </span>
+                  ) : null}
+                </span>
               {field.type === "textarea" ? (
                 <textarea
                   autoComplete={autocompleteByField[field.name]}
@@ -333,8 +339,9 @@ export function DetailsForm({
                   type={field.type}
                 />
               )}
-            </label>
-          ))}
+              </label>
+            );
+          })}
         </div>
 
         <div className="mt-7 flex items-start gap-3 border-t border-[#d9cec8] pt-5 text-sm leading-6 text-[#746760]">
