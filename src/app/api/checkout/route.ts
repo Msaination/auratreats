@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const apiBaseUrl =
   process.env.AURA_API_URL ??
-  "https://backend.monticarlo.co.za/wp-json/aura/v1";
+  "http://localhost:8888/AuraDev/backend/wp-json/aura/v1";
 
 export async function POST(request: Request) {
   let payload: unknown;
