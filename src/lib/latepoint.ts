@@ -1,6 +1,6 @@
 const apiBaseUrl =
   process.env.AURA_API_URL ??
-  "http://localhost:8888/AuraDev/backend/wp-json/aura/v1";
+  "https://staging.msikomultimedia.co.za/wp-json/aura/v1";
 
 export type ServiceDuration = {
   id: string;
