@@ -9,7 +9,7 @@ type GraphQLResponse<T> = {
 
 const endpoint =
   process.env.WORDPRESS_GRAPHQL_ENDPOINT ??
-  "http://localhost:8888/AuraDev/backend/graphql";
+  "https://staging.msikomultimedia.co.za/graphql"; 
 
 export async function wordpressQuery<T>(query: string): Promise<T> {
   const response = await fetch(endpoint, {
