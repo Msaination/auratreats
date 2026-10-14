@@ -5,6 +5,7 @@ import {
   Check,
   Clock3,
   Download,
+  Home,
   ReceiptText,
   UserRound,
   WalletCards,
@@ -12,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 type Confirmation = {
   code: string;
@@ -151,14 +152,19 @@ function formatTime(minutes: number) {
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
-export function BookingConfirmation() {
+export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string }) {
   const router = useRouter();
   const serializedConfirmation = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getServerSnapshot,
   );
-  const confirmation = parseConfirmation(serializedConfirmation);
+  const [paymentConfirmation, setPaymentConfirmation] = useState<Confirmation | null>(null);
+  const [confirmationError, setConfirmationError] = useState("");
+  const [confirmationRetry, setConfirmationRetry] = useState(0);
+  const confirmation = checkoutToken
+    ? paymentConfirmation
+    : parseConfirmation(serializedConfirmation) ?? paymentConfirmation;
   const draft = readBookingDraft();
   const primaryServiceName =
     confirmation?.primaryServiceName ?? confirmation?.serviceName ?? "Treatment";
@@ -201,7 +207,79 @@ export function BookingConfirmation() {
   }
 
   useEffect(() => {
-    if (serializedConfirmation !== "" && !confirmation) {
+    if (!checkoutToken || paymentConfirmation) {
+      return;
+    }
+    const token = checkoutToken;
+
+    let isActive = true;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = Date.now() + 60_000;
+
+    async function loadPaymentConfirmation() {
+      attempts += 1;
+
+      try {
+        const response = await fetch(
+          `/api/checkout-confirmation?token=${encodeURIComponent(token)}`,
+          { cache: "no-store", signal: AbortSignal.timeout(5000) },
+        );
+        const result = (await response.json()) as {
+          confirmation?: Partial<Confirmation>;
+          message?: string;
+        };
+        const verifiedConfirmation = result.confirmation
+          ? parseConfirmation(JSON.stringify(result.confirmation))
+          : null;
+
+        if (response.ok && verifiedConfirmation) {
+          if (isActive) {
+            sessionStorage.setItem(
+              "aura-booking-confirmation",
+              JSON.stringify(verifiedConfirmation),
+            );
+            setPaymentConfirmation(verifiedConfirmation);
+            router.replace("/book/confirmation");
+          }
+          return;
+        }
+
+        if (response.status !== 202 && response.status < 500) {
+          if (isActive) {
+            setConfirmationError(result.message ?? "We could not verify this payment confirmation.");
+          }
+          return;
+        }
+      } catch {
+        // Retry temporary network errors while the payment notification arrives.
+      }
+
+      if (!isActive) {
+        return;
+      }
+
+      if (attempts >= 30 || Date.now() >= deadline) {
+        setConfirmationError(
+          "PayFast has returned, but this site has not received payment confirmation yet. Do not pay again. If your account was charged, contact Aura Spa to verify the transaction.",
+        );
+        return;
+      }
+
+      timer = setTimeout(() => void loadPaymentConfirmation(), 2000);
+    }
+
+    void loadPaymentConfirmation();
+    return () => {
+      isActive = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
+  }, [checkoutToken, confirmationRetry, paymentConfirmation, router, serializedConfirmation]);
+
+  useEffect(() => {
+    if (serializedConfirmation !== "" && !confirmation && !checkoutToken) {
       router.replace("/");
       return;
     }
@@ -215,10 +293,41 @@ export function BookingConfirmation() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmation, router, serializedConfirmation]);
+  }, [checkoutToken, confirmation, router, serializedConfirmation]);
 
   if (!confirmation) {
-    return <p className="relative text-sm text-white/75">Loading confirmation...</p>;
+    return (
+      <div className="relative flex max-w-md flex-col items-center gap-4 text-center text-sm text-white/75">
+        <p aria-live="polite">
+          {confirmationError ||
+            (checkoutToken ? "Confirming your PayFast payment..." : "Loading confirmation...")}
+        </p>
+        {confirmationError ? (
+          <div className="flex flex-wrap justify-center gap-3">
+            {checkoutToken ? (
+              <button
+                className="inline-flex h-11 items-center gap-2 border border-white/40 px-4 font-semibold text-white transition hover:bg-white/10"
+                onClick={() => {
+                  setConfirmationError("");
+                  setConfirmationRetry((attempt) => attempt + 1);
+                }}
+                type="button"
+              >
+                Check payment again
+              </button>
+            ) : null}
+            <button
+              className="inline-flex h-11 items-center gap-2 border border-white/40 px-4 font-semibold text-white transition hover:bg-white/10"
+              onClick={closeConfirmation}
+              type="button"
+            >
+              <Home aria-hidden="true" className="size-4" />
+              Return to Aura home
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -389,6 +498,16 @@ export function BookingConfirmation() {
               Add to calendar
             </a>
           </div>
+        </div>
+        <div className="flex justify-center border-t border-[#d9cec8] px-6 py-5">
+          <button
+            className="inline-flex h-11 items-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
+            onClick={closeConfirmation}
+            type="button"
+          >
+            <Home aria-hidden="true" className="size-4" />
+            Return to Aura home
+          </button>
         </div>
       </section>
 

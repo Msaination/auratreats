@@ -153,7 +153,9 @@ export function ReviewBooking({
       ? (savedCustomer as CustomerDetails)
       : null;
   const [paymentMethod, setPaymentMethod] = useState<string | null>(
-    review.paymentMethods[0]?.id ?? null,
+    review.paymentMethods.find((method) => method.id === "payfast")?.id ??
+      review.paymentMethods[0]?.id ??
+      null,
   );
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
@@ -196,6 +198,7 @@ export function ReviewBooking({
     slot,
     Number(availability.therapist.id),
   );
+  const isEftPayment = paymentMethod === "local" || paymentMethod === "bacs";
   const detailsParams = new URLSearchParams({
     serviceId: String(review.service.id),
     therapistId: String(availability.therapist.id),
@@ -422,7 +425,9 @@ export function ReviewBooking({
           <div className="border-b border-[#cbbdb6] pb-4">
             <h2 id="payment-heading" className="font-serif text-2xl">Payment method</h2>
             <p className="mt-2 text-sm text-[#746760]">
-              Use your full name as the payment reference and send proof of payment when booking.
+              {paymentMethod === "payfast"
+                ? "Pay securely online with PayFast. You will be redirected to complete payment."
+                : "Use your full name as the payment reference and send proof of payment when booking."}
             </p>
           </div>
           {review.paymentMethods.length ? (
@@ -474,18 +479,20 @@ export function ReviewBooking({
             </p>
           )}
 
-          <div className="mt-5 rounded-[1.25rem] border border-[#d9cec8] bg-[#f9f3f1] p-4 text-sm leading-6 text-[#524844]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6f5047]">EFT banking details</p>
-            <ul className="mt-3 space-y-1">
-              <li><span className="font-medium text-[#493d38]">Bank:</span> FNB</li>
-              <li><span className="font-medium text-[#493d38]">Account name:</span> Aura Spa</li>
-              <li><span className="font-medium text-[#493d38]">Account number:</span> 63218435089</li>
-              <li><span className="font-medium text-[#493d38]">Branch code:</span> 202009</li>
-            </ul>
-            <p className="mt-3 text-[#5f4d48]">
-              Use your name as the payment reference and send proof of payment when booking.
-            </p>
-          </div>
+          {isEftPayment ? (
+            <div className="mt-5 rounded-[1.25rem] border border-[#d9cec8] bg-[#f9f3f1] p-4 text-sm leading-6 text-[#524844]">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6f5047]">EFT banking details</p>
+              <ul className="mt-3 space-y-1">
+                <li><span className="font-medium text-[#493d38]">Bank:</span> FNB</li>
+                <li><span className="font-medium text-[#493d38]">Account name:</span> Aura Spa</li>
+                <li><span className="font-medium text-[#493d38]">Account number:</span> 63218435089</li>
+                <li><span className="font-medium text-[#493d38]">Branch code:</span> 202009</li>
+              </ul>
+              <p className="mt-3 text-[#5f4d48]">
+                Use your name as the payment reference and send proof of payment when booking.
+              </p>
+            </div>
+          ) : null}
         </section>
       </div>
 

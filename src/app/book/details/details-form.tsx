@@ -70,12 +70,19 @@ const autocompleteByField: Record<CustomerField["name"], string> = {
   notes: "off",
 };
 
-function normalizePhoneNumber(value: string) {
-  return value.replace(/\D/g, "").slice(0, 10);
+function normalizePhoneNumber(value?: string | null) {
+  const cleaned = String(value ?? "").replace(/\D/g, "");
+  return cleaned.slice(0, 10);
 }
 
-function isValidCellPhone(value: string) {
-  const normalized = normalizePhoneNumber(value);
+function isValidCellPhone(value?: string | null) {
+  const rawValue = String(value ?? "");
+
+  if (!rawValue || /[a-z]/i.test(rawValue)) {
+    return false;
+  }
+
+  const normalized = normalizePhoneNumber(rawValue);
   return /^0\d{9}$/.test(normalized);
 }
 
@@ -197,10 +204,10 @@ export function DetailsForm({
     );
     const phoneValue = normalizePhoneNumber(String(customer.phone ?? ""));
 
-    if (!isValidCellPhone(phoneValue)) {
+    if (!isValidCellPhone(String(customer.phone ?? ""))) {
       const phoneField = event.currentTarget.querySelector<HTMLInputElement>('input[name="phone"]');
       if (phoneField) {
-        phoneField.setCustomValidity("Cell number must be exactly 10 digits starting with 0.");
+        phoneField.setCustomValidity("Cell number must be 10 digits and start with 0.");
         phoneField.reportValidity();
         phoneField.setCustomValidity("");
       }
