@@ -26,6 +26,25 @@ type CustomerDetails = {
   notes?: string;
 };
 
+type DraftBooking = {
+  serviceId: number;
+  serviceName: string;
+  therapistId: number;
+  therapistName: string;
+  duration: number;
+  durationId: string;
+  durationName: string;
+  durationLabel: string;
+  startDate: string;
+  startMinutes: number;
+  endMinutes: number;
+  totalAttendees: number;
+  totalDurationMinutes: number;
+  primaryPrice: number;
+  totalPrice: number;
+  addonServices: Array<Record<string, unknown>>;
+};
+
 function parseDate(value: string) {
   return new Date(`${value}T12:00:00Z`);
 }
@@ -160,11 +179,18 @@ export function ReviewBooking({
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const draft = readBookingDraft();
+  const cartBookings = Array.isArray(draft.cartBookings)
+    ? (draft.cartBookings as DraftBooking[])
+    : [];
   const addonServices = Array.isArray(draft.addonServices)
     ? (draft.addonServices as Array<Record<string, unknown>>)
     : [];
-  const totalDurationMinutes = Number(
+  const currentDurationMinutes = Number(
     draft.totalDurationMinutes ?? draft.durationMinutes ?? review.service.duration,
+  );
+  const totalDurationMinutes = currentDurationMinutes + cartBookings.reduce(
+    (sum, item) => sum + Number(item.totalDurationMinutes ?? item.duration ?? 0),
+    0,
   );
   const totalAttendees = Number(
     draft.totalAttendees ?? draft.selectedTotalAttendees ?? 1,
@@ -182,10 +208,14 @@ export function ReviewBooking({
       Math.max(0, Number(draft.totalPrice ?? draft.price ?? reviewTotalAmount) - addonTotal),
   );
   const computedTotalAmount = primaryServicePrice + addonTotal;
-  const totalAmount = Number(
+  const currentTotalAmount = Number(
     draft.totalPrice ??
       draft.price ??
       (Number.isFinite(computedTotalAmount) ? computedTotalAmount : reviewTotalAmount),
+  );
+  const totalAmount = currentTotalAmount + cartBookings.reduce(
+    (sum, item) => sum + Number(item.totalPrice ?? 0),
+    0,
   );
   const appointmentDate = availability.dates[0].date;
   const primaryDurationLabel = getDurationDisplayLabel(
@@ -214,11 +244,47 @@ export function ReviewBooking({
 
   function addMoreItems() {
     const draft = readBookingDraft();
+    const existingBookings = Array.isArray(draft.cartBookings)
+      ? (draft.cartBookings as DraftBooking[])
+      : [];
+    const currentBooking: DraftBooking = {
+      serviceId: review.service.id,
+      serviceName: review.service.name,
+      therapistId: Number(availability.therapist.id),
+      therapistName: availability.therapist.name,
+      duration: review.service.duration,
+      durationId: String(draft.primaryDurationId ?? draft.durationId ?? ""),
+      durationName: String(draft.primaryDurationName ?? ""),
+      durationLabel: primaryDurationLabel,
+      startDate: appointmentDate,
+      startMinutes: slot.startMinutes,
+      endMinutes: slot.endMinutes,
+      totalAttendees,
+      totalDurationMinutes: currentDurationMinutes,
+      primaryPrice: primaryServicePrice,
+      totalPrice: currentTotalAmount,
+      addonServices,
+    };
+
     sessionStorage.setItem(
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
-        customer: draft.customer,
+        cartBookings: [...existingBookings, currentBooking],
+        selectedServices: [],
+        addonServices: [],
+        selectedExtraIds: [],
+        primaryServiceId: null,
+        primaryServiceName: "",
+        primaryDurationMinutes: null,
+        primaryDurationName: "",
+        primaryDurationLabel: "",
+        primaryPrice: 0,
+        addonTotal: 0,
+        totalDurationMinutes: 0,
+        totalPrice: 0,
+        durationMinutes: 0,
+        price: 0,
       }),
     );
     router.push("/book");
@@ -256,6 +322,18 @@ export function ReviewBooking({
           startMinutes: slot.startMinutes,
           customer,
           addonServices: draft.addonServices ?? [],
+          appointments: [
+            ...cartBookings,
+            {
+              serviceId: review.service.id,
+              therapistId: Number(availability.therapist.id),
+              duration: review.service.duration,
+              startDate: appointmentDate,
+              startMinutes: slot.startMinutes,
+              totalAttendees,
+              addonServices: draft.addonServices ?? [],
+            },
+          ],
           totalAttendees,
           totalPrice: totalAmount,
           totalDurationMinutes: Number(
@@ -357,6 +435,32 @@ export function ReviewBooking({
             </div>
           </dl>
         </section>
+
+        {cartBookings.length ? (
+          <section aria-labelledby="additional-bookings-heading">
+            <h2 id="additional-bookings-heading" className="font-serif text-2xl">
+              Already in this order
+            </h2>
+            <div className="mt-4 divide-y divide-[#d9cec8] border-y border-[#d9cec8]">
+              {cartBookings.map((item, index) => (
+                <div className="flex flex-wrap items-start justify-between gap-3 py-4" key={`${item.serviceId}-${item.startDate}-${item.startMinutes}-${index}`}>
+                  <div>
+                    <p className="font-semibold text-[#493d38]">{item.serviceName}</p>
+                    <p className="mt-1 text-sm text-[#746760]">
+                      {item.therapistName} · {formatDate(item.startDate)} · {formatTime(item.startMinutes)}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-[#5f4037]">
+                    {new Intl.NumberFormat("en-ZA", {
+                      style: "currency",
+                      currency: "ZAR",
+                    }).format(item.totalPrice)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {addonServices.length ? (
           <section aria-labelledby="add-ons-heading">
@@ -570,8 +674,8 @@ export function ReviewBooking({
           Back to details
         </Link>
         <button
-          className="mt-3 flex w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition opacity-50 cursor-not-allowed"
-          disabled
+          className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc] disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isStartingCheckout}
           onClick={addMoreItems}
           type="button"
         >

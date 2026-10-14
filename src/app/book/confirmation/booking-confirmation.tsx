@@ -15,7 +15,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-type Confirmation = {
+type ConfirmationBooking = {
   code: string;
   serviceName: string;
   primaryServiceName?: string;
@@ -26,12 +26,16 @@ type Confirmation = {
   duration: number;
   totalDurationMinutes?: number;
   status: string;
-  paymentMethod: string;
-  total: string;
-  totalPrice?: number;
   addonServices?: Array<Record<string, unknown>>;
   calendarQr: string;
   calendarDataUri: string;
+};
+
+type Confirmation = ConfirmationBooking & {
+  paymentMethod: string;
+  total: string;
+  totalPrice?: number;
+  bookings?: ConfirmationBooking[];
 };
 
 const celebrationSprinkles = [
@@ -165,6 +169,11 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
   const confirmation = checkoutToken
     ? paymentConfirmation
     : parseConfirmation(serializedConfirmation) ?? paymentConfirmation;
+  const confirmationBookings = confirmation?.bookings?.length
+    ? confirmation.bookings
+    : confirmation
+      ? [confirmation]
+      : [];
   const draft = readBookingDraft();
   const primaryServiceName =
     confirmation?.primaryServiceName ?? confirmation?.serviceName ?? "Treatment";
@@ -430,6 +439,37 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
                     })}
                   </div>
                 </div>
+              </div>
+            ) : null}
+
+            {confirmationBookings.length > 1 ? (
+              <div className="space-y-4 sm:col-span-2">
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">
+                  Other appointments in this order
+                </p>
+                {confirmationBookings.slice(1).map((booking, index) => (
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-4 border-t border-[#d9cec8] pt-4"
+                    key={`${booking.code}-${index}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[#493d38]">{booking.serviceName}</p>
+                      <p className="mt-1 text-sm text-[#746760]">
+                        {booking.therapistName} · {formatDate(booking.date)} · {formatTime(booking.startMinutes)} - {formatTime(booking.endMinutes)}
+                      </p>
+                    </div>
+                    {booking.calendarDataUri ? (
+                      <a
+                        className="inline-flex h-10 items-center gap-2 border border-[#6f5047] px-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
+                        download={`aura-spa-${booking.code}.ics`}
+                        href={booking.calendarDataUri}
+                      >
+                        <Download aria-hidden="true" className="size-4" />
+                        Add to calendar
+                      </a>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             ) : null}
 

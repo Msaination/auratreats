@@ -19,7 +19,12 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDeferredValue, useEffect, useState, useTransition } from "react";
+import {
+  useDeferredValue,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type {
@@ -45,6 +50,18 @@ function readBookingDraft(): Record<string, unknown> {
   } catch {
     return {};
   }
+}
+
+function subscribeToBookingDraft() {
+  return () => {};
+}
+
+function getBookingDraftSnapshot() {
+  return sessionStorage.getItem("aura-booking-draft");
+}
+
+function getServerBookingDraftSnapshot() {
+  return "";
 }
 
 function clampAttendees(value: number, minimum: number, maximum: number) {
@@ -79,7 +96,69 @@ function getDurationSectionLabel(
   return isSelected ? "Choose duration" : "Available durations";
 }
 
+function restoreSelectedServices(
+  draft: Record<string, unknown>,
+  categories: ServiceCatalog["categories"],
+): Selection[] {
+  const draftSelections = Array.isArray(draft.selectedServices)
+    ? (draft.selectedServices as Array<Record<string, unknown>>)
+    : [];
+  const services = categories.flatMap((category) => category.services);
+
+  return draftSelections
+    .map((entry) => {
+      const service = services.find(
+        (candidate) => candidate.id === Number(entry.serviceId),
+      );
+
+      if (!service) {
+        return null;
+      }
+
+      const duration =
+        service.durations.find(
+          (candidate) => candidate.id === String(entry.durationId),
+        ) ??
+        service.durations[0] ?? {
+          id: "default",
+          name: "",
+          durationMinutes: service.durationMinutes,
+          price: service.price.amount,
+          formattedPrice: service.price.formatted,
+        };
+
+      return { service, duration } satisfies Selection;
+    })
+    .filter((entry): entry is Selection => entry !== null);
+}
+
+function getCapacityBounds(service: LatePointService | null) {
+  const minimum = Math.max(
+    1,
+    Number.isFinite(service?.capacityMin)
+      ? Number(service?.capacityMin ?? 1)
+      : 1,
+  );
+  const maximum = Math.max(
+    1,
+    Number.isFinite(service?.capacityMax)
+      ? Number(service?.capacityMax ?? 1)
+      : 1,
+  );
+
+  return { minimum, maximum };
+}
+
 export function ServiceSelector({ categories }: ServiceCatalog) {
+  const serializedDraft = useSyncExternalStore(
+    subscribeToBookingDraft,
+    getBookingDraftSnapshot,
+    getServerBookingDraftSnapshot,
+  );
+  const storedDraft = serializedDraft ? readBookingDraft() : {};
+  const cartBookings = Array.isArray(storedDraft.cartBookings)
+    ? (storedDraft.cartBookings as Array<Record<string, unknown>>)
+    : [];
   const nestedCategoryConfigs = [
     {
       name: "Waxing",
@@ -151,95 +230,44 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
-  const [selectedServices, setSelectedServices] = useState<Selection[]>([]);
-  const [selectedExtraIds, setSelectedExtraIds] = useState<number[]>([]);
-  const [totalAttendees, setTotalAttendees] = useState<number>(1);
+  const restoredSelectedServices = restoreSelectedServices(storedDraft, categories);
+  const draftAddonServices = Array.isArray(storedDraft.addonServices)
+    ? (storedDraft.addonServices as Array<Record<string, unknown>>)
+    : [];
+  const restoredSelectedExtraIds = draftAddonServices
+    .map((entry) => Number(entry.serviceId ?? entry.id))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const storedAttendeeCount = Number(
+    storedDraft.totalAttendees ?? storedDraft.selectedTotalAttendees ?? 1,
+  );
+  const restoredTotalAttendees =
+    Number.isFinite(storedAttendeeCount) && storedAttendeeCount > 0
+      ? storedAttendeeCount
+      : 1;
+  const [selectedServicesOverride, setSelectedServicesOverride] = useState<
+    Selection[] | null
+  >(null);
+  const selectedServices = selectedServicesOverride ?? restoredSelectedServices;
+  const [selectedExtraIdsOverride, setSelectedExtraIdsOverride] = useState<
+    number[] | null
+  >(null);
+  const selectedExtraIds =
+    selectedExtraIdsOverride ?? restoredSelectedExtraIds;
+  const [totalAttendeesOverride, setTotalAttendeesOverride] = useState<
+    number | null
+  >(null);
+  const totalAttendees = totalAttendeesOverride ?? restoredTotalAttendees;
   const [activeNestedSubcategoryIds, setActiveNestedSubcategoryIds] = useState<
     Record<number, number | null>
   >({});
-
-  useEffect(() => {
-    const draft = readBookingDraft();
-    const draftSelections = Array.isArray(draft.selectedServices)
-      ? (draft.selectedServices as Array<Record<string, unknown>>)
-      : [];
-    const draftAddonServices = Array.isArray(draft.addonServices)
-      ? (draft.addonServices as Array<Record<string, unknown>>)
-      : [];
-    const draftTotalAttendees = Number(
-      draft.totalAttendees ?? draft.selectedTotalAttendees ?? 1,
-    );
-
-    if (!draftSelections.length) {
-      setSelectedServices([]);
-      setSelectedExtraIds(
-        draftAddonServices
-          .map((entry) => Number(entry.serviceId ?? entry.id))
-          .filter((value) => Number.isFinite(value) && value > 0),
-      );
-      setTotalAttendees(Number.isFinite(draftTotalAttendees) && draftTotalAttendees > 0 ? draftTotalAttendees : 1);
-      return;
-    }
-
-    const allServices = categories.flatMap((category) => category.services);
-
-    const restoredSelections = draftSelections
-      .map((entry) => {
-        const service = allServices.find(
-          (candidate) => candidate.id === Number(entry.serviceId),
-        );
-
-        if (!service) {
-          return null;
-        }
-
-        const duration =
-          service.durations.find((candidate) => candidate.id === String(entry.durationId)) ??
-          service.durations[0] ?? {
-            id: "default",
-            name: "",
-            durationMinutes: service.durationMinutes,
-            price: service.price.amount,
-            formattedPrice: service.price.formatted,
-          };
-
-        return { service, duration } satisfies Selection;
-      })
-      .filter((entry): entry is Selection => entry !== null);
-
-    setSelectedServices(restoredSelections);
-    setSelectedExtraIds(
-      draftAddonServices
-        .map((entry) => Number(entry.serviceId ?? entry.id))
-        .filter((value) => Number.isFinite(value) && value > 0),
-    );
-    setTotalAttendees(
-      Number.isFinite(draftTotalAttendees) && draftTotalAttendees > 0
-        ? draftTotalAttendees
-        : 1,
-    );
-  }, [categories]);
   const [isPending, startTransition] = useTransition();
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const router = useRouter();
   const selectedPrimary = selectedServices[0] ?? null;
   const selectedPrimaryExtras = selectedPrimary?.service.extras ?? [];
-  const maxCapacity = Math.max(
-    1,
-    Number.isFinite(selectedPrimary?.service.capacityMax)
-      ? Number(selectedPrimary?.service.capacityMax ?? 1)
-      : 1,
+  const { minimum: minCapacity, maximum: maxCapacity } = getCapacityBounds(
+    selectedPrimary?.service ?? null,
   );
-  const minCapacity = Math.max(
-    1,
-    Number.isFinite(selectedPrimary?.service.capacityMin)
-      ? Number(selectedPrimary?.service.capacityMin ?? 1)
-      : 1,
-  );
-
-  useEffect(() => {
-    setTotalAttendees((current) => clampAttendees(current, minCapacity, maxCapacity));
-  }, [minCapacity, maxCapacity]);
 
   const effectiveTotalAttendees = clampAttendees(totalAttendees, minCapacity, maxCapacity);
   const selectedExtraDurationMinutes = selectedPrimaryExtras
@@ -351,45 +379,47 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       formattedPrice: service.price.formatted,
     };
 
-    setSelectedServices((current) => {
-      const existingIndex = current.findIndex(
-        (candidate) => candidate.service.id === service.id,
+    const isAlreadySelected = selectedServices.some(
+      (candidate) => candidate.service.id === service.id,
+    );
+
+    if (isAlreadySelected) {
+      setSelectedServicesOverride(
+        selectedServices.filter((candidate) => candidate.service.id !== service.id),
       );
+      setSelectedExtraIdsOverride([]);
+      return;
+    }
 
-      if (existingIndex >= 0) {
-        setSelectedExtraIds([]);
-        return current.filter((candidate) => candidate.service.id !== service.id);
-      }
+    if (selectedServices.length > 0) {
+      return;
+    }
 
-      if (current.length > 0) {
-        return current;
-      }
-
-      setSelectedExtraIds([]);
-      return [{ service, duration }];
-    });
+    setSelectedServicesOverride([{ service, duration }]);
+    setSelectedExtraIdsOverride([]);
   }
 
   function chooseServiceDuration(service: LatePointService, duration: ServiceDuration) {
-    setSelectedServices((current) => {
-      const existingIndex = current.findIndex(
-        (candidate) => candidate.service.id === service.id,
-      );
+    const isAlreadySelected = selectedServices.some(
+      (candidate) => candidate.service.id === service.id,
+    );
 
-      if (existingIndex >= 0) {
-        setSelectedExtraIds([]);
-        return current.map((candidate) =>
+    if (isAlreadySelected) {
+      setSelectedServicesOverride(
+        selectedServices.map((candidate) =>
           candidate.service.id === service.id ? { ...candidate, duration } : candidate,
-        );
-      }
+        ),
+      );
+      setSelectedExtraIdsOverride([]);
+      return;
+    }
 
-      if (current.length > 0) {
-        return current;
-      }
+    if (selectedServices.length > 0) {
+      return;
+    }
 
-      setSelectedExtraIds([]);
-      return [{ service, duration }];
-    });
+    setSelectedServicesOverride([{ service, duration }]);
+    setSelectedExtraIdsOverride([]);
   }
 
   function toggleExtra(extra: NonNullable<LatePointService["extras"]>[number]) {
@@ -397,10 +427,10 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       return;
     }
 
-    setSelectedExtraIds((current) =>
-      current.includes(extra.id)
-        ? current.filter((id) => id !== extra.id)
-        : [...current, extra.id],
+    setSelectedExtraIdsOverride(
+      selectedExtraIds.includes(extra.id)
+        ? selectedExtraIds.filter((id) => id !== extra.id)
+        : [...selectedExtraIds, extra.id],
     );
   }
 
@@ -473,19 +503,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     return Sparkles;
   }
 
-  function selectDuration(serviceId: number, duration: ServiceDuration) {
-    setSelectedServices((current) =>
-      current.map((candidate) =>
-        candidate.service.id === serviceId ? { ...candidate, duration } : candidate,
-      ),
-    );
-  }
-
   function removeSelectedService(serviceId: number) {
-    setSelectedServices((current) =>
-      current.filter((candidate) => candidate.service.id !== serviceId),
+    setSelectedServicesOverride(
+      selectedServices.filter((candidate) => candidate.service.id !== serviceId),
     );
-    setSelectedExtraIds([]);
+    setSelectedExtraIdsOverride([]);
   }
 
   function saveSelection() {
@@ -526,9 +548,11 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     const addonTotal = addonEntries.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
     const totalBundlePrice = attendeeAdjustedServicePrice + addonTotal;
 
+    const draft = readBookingDraft();
     sessionStorage.setItem(
       "aura-booking-draft",
       JSON.stringify({
+        ...draft,
         selectedServices: selectedEntries,
         primaryServiceId: primarySelection.serviceId,
         primaryServiceName: primarySelection.serviceName,
@@ -583,6 +607,88 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
           />
         </div>
       </div>
+
+      {cartBookings.length ? (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-y border-[#d9cec8] py-3">
+          <p className="text-sm text-[#655852]">
+            {cartBookings.length} appointment{cartBookings.length === 1 ? "" : "s"} already in this order
+          </p>
+          <button
+            className="text-sm font-semibold text-[#6f5047] underline underline-offset-4"
+            onClick={() => {
+              const draft = readBookingDraft();
+              const lastBooking = cartBookings[cartBookings.length - 1];
+              const remainingBookings = cartBookings.slice(0, -1);
+              const addonServices = Array.isArray(lastBooking.addonServices)
+                ? lastBooking.addonServices as Array<Record<string, unknown>>
+                : [];
+              const addonTotal = addonServices.reduce(
+                (sum, item) => sum + Number(item.price ?? item.amount ?? 0),
+                0,
+              );
+              const durationId = String(lastBooking.durationId ?? "");
+              const durationName = String(lastBooking.durationName ?? "");
+              const durationLabel = String(
+                lastBooking.durationLabel ?? `${lastBooking.duration} min`,
+              );
+              const primaryPrice = Number(
+                lastBooking.primaryPrice ?? Number(lastBooking.totalPrice ?? 0) - addonTotal,
+              );
+              const selectedService = {
+                serviceId: Number(lastBooking.serviceId),
+                serviceName: String(lastBooking.serviceName ?? "Treatment"),
+                durationId,
+                durationMinutes: Number(lastBooking.duration),
+                durationName,
+                durationLabel,
+                price: primaryPrice,
+              };
+              sessionStorage.setItem(
+                "aura-booking-draft",
+                JSON.stringify({
+                  ...draft,
+                  cartBookings: remainingBookings,
+                  selectedServices: [selectedService],
+                  primaryServiceId: selectedService.serviceId,
+                  primaryServiceName: selectedService.serviceName,
+                  primaryDurationId: durationId,
+                  primaryDurationMinutes: selectedService.durationMinutes,
+                  primaryDurationName: durationName,
+                  primaryDurationLabel: durationLabel,
+                  primaryPrice,
+                  addonServices,
+                  addonTotal,
+                  totalDurationMinutes: Number(lastBooking.totalDurationMinutes ?? lastBooking.duration),
+                  totalPrice: Number(lastBooking.totalPrice ?? 0),
+                  totalAttendees: Number(lastBooking.totalAttendees ?? 1),
+                  selectedTotalAttendees: Number(lastBooking.totalAttendees ?? 1),
+                  serviceId: selectedService.serviceId,
+                  serviceName: selectedService.serviceName,
+                  durationId,
+                  durationMinutes: selectedService.durationMinutes,
+                  price: Number(lastBooking.totalPrice ?? 0),
+                  therapistId: Number(lastBooking.therapistId),
+                  therapistName: String(lastBooking.therapistName ?? ""),
+                  startDate: String(lastBooking.startDate),
+                  startMinutes: Number(lastBooking.startMinutes),
+                  endMinutes: Number(lastBooking.endMinutes),
+                }),
+              );
+              const params = new URLSearchParams({
+                serviceId: String(lastBooking.serviceId),
+                therapistId: String(lastBooking.therapistId),
+                duration: String(lastBooking.duration),
+                startDate: String(lastBooking.startDate),
+                startMinutes: String(lastBooking.startMinutes),
+              });
+              router.push(`/book/review?${params}`);
+            }}
+            type="button"
+          >
+            Return to order
+          </button>
+        </div>
+      ) : null}
 
       {selectedPrimary ? (
         <div className="mb-5 rounded-[1.25rem] border border-[#d9b9aa] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] p-3 shadow-[0_12px_26px_rgba(88,68,59,0.06)] sm:p-4">
@@ -669,7 +775,9 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                           className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-lg font-bold text-[#352d2a] transition hover:border-[#79594f] disabled:cursor-not-allowed disabled:opacity-45"
                           disabled={effectiveTotalAttendees <= minCapacity}
                           onClick={() =>
-                            setTotalAttendees((current) => clampAttendees(current - 1, minCapacity, maxCapacity))
+                            setTotalAttendeesOverride(
+                              clampAttendees(totalAttendees - 1, minCapacity, maxCapacity),
+                            )
                           }
                           type="button"
                         >
@@ -682,7 +790,9 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                           className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-lg font-bold text-[#352d2a] transition hover:border-[#79594f] disabled:cursor-not-allowed disabled:opacity-45"
                           disabled={effectiveTotalAttendees >= maxCapacity}
                           onClick={() =>
-                            setTotalAttendees((current) => clampAttendees(current + 1, minCapacity, maxCapacity))
+                            setTotalAttendeesOverride(
+                              clampAttendees(totalAttendees + 1, minCapacity, maxCapacity),
+                            )
                           }
                           type="button"
                         >
@@ -846,7 +956,6 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                           ) ?? null;
                         const isSelected = selectedItem !== null;
                         const isPrimary = selectedPrimary?.service.id === service.id;
-                        const isAddOn = false;
 
                         return (
                           <Card
@@ -868,7 +977,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                   <div className="min-w-0">
                                     <div className="mb-2 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-[#8a756c]">
                                       <span className="inline-block h-2 w-2 rounded-full bg-[#b1887a]" />
-                                      {isPrimary ? "Primary treatment" : isAddOn ? "Add-on selected" : "Signature ritual"}
+                                      {isPrimary ? "Primary treatment" : "Signature ritual"}
                                     </div>
                                     <div className="flex items-start gap-2">
                                       <h4 className="text-base font-semibold text-[#352d2a] sm:text-lg">
@@ -918,7 +1027,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
                                     {service.durationMinutes} min
                                   </span>
                                   <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8a756c]">
-                                    {isPrimary ? "Primary" : isAddOn ? "Add-on" : isSelected ? "Selected" : "Available"}
+                                    {isPrimary ? "Primary" : isSelected ? "Selected" : "Available"}
                                   </span>
                                 </div>
                               </CardContent>
