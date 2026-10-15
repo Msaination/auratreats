@@ -40,8 +40,8 @@ export function Hero() {
           <Link href="/book" className="button button-primary">Book your escape</Link>
           <div className="hero-action-links">
             <a className="button button-secondary" href="#experience">Discover Aura</a>
-            <a className="button button-secondary" href="/documents/Aura-Menu-2026-1.pdf" download>Price List</a>
-            <a className="button button-secondary" href="/documents/AuraPolicyv1.1.0.pdf" target="_blank" rel="noreferrer">SPA ETIQUETTE &amp; GUEST POLICY</a>
+            <a className="button button-secondary" href="/documents/Aura-Menu-2026-WA.pdf" download="Aura-Menu-2026-WA.pdf">Price List</a>
+            <a className="button button-secondary" href="/documents/Aura-Policy.pdf" target="_blank" rel="noreferrer">SPA ETIQUETTE &amp; GUEST POLICY</a>
             <a className="button button-secondary" href="#payment">Pay via EFT</a>
           </div>
         </div>
