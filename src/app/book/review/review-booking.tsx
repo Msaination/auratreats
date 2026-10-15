@@ -208,6 +208,10 @@ function getServerBookingDraftSnapshot() {
 async function clearBookingDraftState() {
   sessionStorage.removeItem("aura-booking-draft");
 
+  await clearApplicationCache();
+}
+
+async function clearApplicationCache() {
   if (typeof window !== "undefined" && "caches" in window) {
     try {
       const cacheNames = await caches.keys();
@@ -250,8 +254,6 @@ export function ReviewBooking({
   );
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
-  const [cartBookingsOverride, setCartBookingsOverride] =
-    useState<DraftBooking[] | null>(null);
   const [bookingAvailability, setBookingAvailability] = useState<
     Record<string, boolean | null>
   >({});
@@ -259,7 +261,7 @@ export function ReviewBooking({
   const savedCartBookings = Array.isArray(draft.cartBookings)
     ? (draft.cartBookings as DraftBooking[])
     : [];
-  const cartBookings = cartBookingsOverride ?? savedCartBookings;
+  const cartBookings = savedCartBookings;
   const addonServices = Array.isArray(draft.addonServices)
     ? (draft.addonServices as Array<Record<string, unknown>>)
     : [];
@@ -465,7 +467,7 @@ export function ReviewBooking({
     returnToServiceSelector([...cartBookings, currentBooking]);
   }
 
-  function removeCartBooking(indexToRemove: number) {
+  async function removeCartBooking(indexToRemove: number) {
     const nextBookings = cartBookings.filter(
       (_, index) => index !== indexToRemove,
     );
@@ -475,7 +477,8 @@ export function ReviewBooking({
       "aura-booking-draft",
       JSON.stringify({ ...draft, cartBookings: nextBookings }),
     );
-    setCartBookingsOverride(nextBookings);
+    await clearApplicationCache();
+    window.location.replace(window.location.href);
   }
 
   function removeCurrentAppointment() {
