@@ -1,122 +1,90 @@
 import Link from "next/link";
-import { Camera, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { MapPin } from "lucide-react";
+import { ExperienceSlider, MobileNavigation } from "@/components/homepage-interactions";
 import type { HomePageContent } from "@/lib/home-page";
 
 type HomePageProps = {
   content: HomePageContent;
 };
 
-export function Header({ content }: HomePageProps) {
+export function Header() {
   return (
-    <header className="spa-header">
-      <div className="spa-container spa-header-inner">
-        <Link href="/" className="spa-brand" aria-label="Aura Spa home">
-          <img src="/images/AuraLogo.png" alt="Aura Spa" className="spa-brand-logo" />
-        </Link>
+    <div className="site-header">
+      <Link href="/" className="brand" aria-label="Aura Spa home">
+        <img src="/images/AuraLogo.png" alt="Aura Spa" />
+      </Link>
+      <MobileNavigation />
+    </div>
+  );
+}
 
-        <nav className="spa-nav" aria-label="Main navigation">
-          <ul>
-            {content.header.nav.map((item) => (
-              <li key={item.label}>
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <Link href={content.header.ctaHref} className="spa-button spa-button-primary spa-button-small">
-          {content.header.ctaLabel}
-        </Link>
+export function Hero() {
+  return (
+    <header
+      className="hero"
+      id="home"
+      style={{ backgroundImage: "url('/images/AuraBG.jpg')" }}
+    >
+      <Header />
+      <div className="hero-inner">
+        <p className="kicker">Relax . Restore . Rejuvenate</p>
+        <h1>Aura Spa</h1>
+        <p className="hero-copy">Escape the demands of everyday life and immerse yourself in a sanctuary where wellness, beauty and relaxation come together.</p>
+        <p className="location-line">
+          <a href="https://www.google.com/maps/search/?api=1&query=King%27s%20Palace%20Hotel%2C%20Donkerhoek%20Road%2C%20Rustenburg%2C%20South%20Africa" target="_blank" rel="noopener noreferrer">
+            <MapPin aria-hidden="true" />
+            <span>King’s Palace Hotel · Rustenburg</span>
+          </a>
+        </p>
+        <div className="hero-actions">
+          <Link href="/book" className="button button-primary">Book your escape</Link>
+          <div className="hero-action-links">
+            <a className="button button-secondary" href="#experience">Discover Aura</a>
+            <a className="button button-secondary" href="/documents/Aura-Menu-2026-1.pdf" download>Price List</a>
+            <a className="button button-secondary" href="/documents/AuraPolicyv1.1.0.pdf" target="_blank" rel="noreferrer">SPA ETIQUETTE &amp; GUEST POLICY</a>
+            <a className="button button-secondary" href="#payment">Pay via EFT</a>
+          </div>
+        </div>
       </div>
     </header>
   );
 }
 
-export function Hero({ content }: HomePageProps) {
+export function BrandIntro() {
   return (
-    <section className="spa-hero" style={{ backgroundImage: "url('/images/AuraBG.jpg')" }}>
-      <div className="spa-light-beam" aria-hidden="true" />
-      <div className="spa-smoke-layer" aria-hidden="true">
-        <span className="spa-smoke smoke-main" />
-        <span className="spa-smoke smoke-secondary" />
-        <span className="spa-smoke smoke-tertiary" />
-      </div>
-
-      <div className="spa-container spa-hero-grid">
-        <div className="spa-hero-copy">
-          <p className="spa-eyebrow">{content.hero.eyebrow}</p>
-          <h1>{content.hero.headline}</h1>
-          <p className="spa-hero-subheadline">{content.hero.subheadline}</p>
-          <div className="spa-button-row">
-            <Link href={content.hero.primaryButtonUrl} className="spa-button spa-button-primary">
-              {content.hero.primaryButtonLabel}
-            </Link>
-            <Link href={content.hero.secondaryButtonUrl} className="spa-button spa-button-secondary">
-              {content.hero.secondaryButtonLabel}
-            </Link>
-            <a href={content.hero.tertiaryButtonUrl} className="spa-button spa-button-policy" target="_blank" rel="noreferrer">
-              {content.hero.tertiaryButtonLabel}
-            </a>
+    <section className="section" id="welcome" aria-labelledby="welcome-heading">
+      <div className="wrap welcome-layout">
+        <div className="reveal">
+          <p className="section-label">Welcome to Aura Spa</p>
+          <h2 className="display-heading" id="welcome-heading">Space to slow down, reconnect and simply breathe.</h2>
+          <div className="welcome-copy">
+            <p>Designed with timeless elegance and inspired by the calming essence of nature, Aura Spa offers thoughtfully curated wellness experiences that restore balance, nurture confidence and awaken the senses.</p>
+            <p>Every experience is delivered with exceptional care in a tranquil environment that encourages you to slow down, reconnect and simply breathe.</p>
+            <p>Whether you’re visiting for an hour of self-care or a full day of indulgence, every detail has been carefully considered to leave you feeling refreshed, uplifted and already looking forward to your next visit.</p>
           </div>
         </div>
-
-        <div className="spa-hero-visual">
-          <img src={content.hero.imageUrl} alt={content.hero.headline} className="spa-hero-image" />
-          <div className="spa-floating-badge">
-            <strong>{content.hero.badgeTitle}</strong>
-            <span>{content.hero.badgeSubtitle}</span>
-          </div>
-        </div>
+        <aside className="welcome-aside reveal" aria-label="Aura Spa location">
+          <strong>Your quiet place.</strong>
+          <span>King’s Palace Hotel<br />Donkerhoek Road, Rustenburg</span>
+        </aside>
       </div>
     </section>
   );
 }
 
-export function BrandIntro({ content }: HomePageProps) {
+export function FeatureGrid() {
   return (
-    <section id="about" className="spa-section">
-      <div className="spa-container spa-split">
-        <div className="spa-story-copy">
-          <p className="spa-eyebrow">{content.intro.eyebrow}</p>
-          <h2>{content.intro.heading}</h2>
-          <p>{content.intro.paragraphOne}</p>
-          <p>{content.intro.paragraphTwo}</p>
+    <section className="section experience" id="experience" aria-labelledby="experience-heading">
+      <div className="experience-layout">
+        <div className="experience-copy">
+          <p className="section-label">The Aura Experience</p>
+          <h2 className="display-heading" id="experience-heading">Wellness begins with the senses.</h2>
+          <h3>Sensory Wellness Therapy</h3>
+          <p>Before your treatment begins, you’ll be invited to choose your preferred aroma from our signature collection of therapeutic oils. As calming fragrances fill the room, gentle touch, mindful rituals and a serene atmosphere work together to release tension, quiet the mind and restore balance.</p>
+          <p>More than just a treatment, this is a complete sensory experience designed to nurture both body and soul, leaving you feeling renewed long after your visit.</p>
+          <div className="ritual-note"><span className="ritual-number">01</span><span>Choose your aroma<br />Begin your ritual</span></div>
         </div>
-
-        <div className="spa-story-media">
-          <img src={content.intro.imageUrl} alt={content.intro.heading} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function FeatureGrid({ content }: HomePageProps) {
-  return (
-    <section className="spa-section spa-section-soft" id="therapy">
-      <div className="spa-container">
-        <div className="spa-section-heading">
-          <p className="spa-eyebrow">{content.features.eyebrow}</p>
-          <h2>{content.features.heading}</h2>
-          <p>{content.features.intro}</p>
-        </div>
-
-        <div className="spa-grid-3">
-          {content.features.items.map((feature) => (
-            <article key={feature.title} className="spa-feature-card">
-              <div className="spa-feature-media">
-                <img src={feature.imageUrl} alt={feature.title} />
-              </div>
-              <div className="spa-feature-body">
-                <div className="spa-feature-icon" aria-hidden="true">
-                  <span />
-                </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+        <ExperienceSlider />
       </div>
     </section>
   );
@@ -206,19 +174,61 @@ export function BenefitsBlock({ content }: HomePageProps) {
 }
 
 export function GiftVoucherBlock({ content }: HomePageProps) {
+  const offerings = [
+    {
+      theme: "gift",
+      topline: "Give Aura",
+      number: "01",
+      title: "Gift Vouchers",
+      description: "Give the gift of relaxation with beautifully presented digital or printed gift vouchers.",
+      items: ["Birthday", "Anniversary", "Bridal", "Baby Shower", "Thank You", "Corporate Appreciation", "Festive Season", "Choose Your Own Amount"],
+      label: "Choose a voucher",
+      href: "/book",
+    },
+    {
+      theme: "seasonal",
+      topline: "Limited rituals",
+      number: "02",
+      title: "Seasonal Indulgence",
+      description: "Discover exclusive monthly experiences and limited-time wellness offers designed around the seasons.",
+      items: content.offers.items,
+      label: "View current offers",
+      href: "/book",
+    },
+    {
+      theme: "corporate",
+      topline: "Wellbeing at work",
+      number: "03",
+      title: "Corporate Wellness",
+      description: "Invest in your team’s wellbeing with tailored wellness experiences.",
+      items: ["Conference Wellness Breaks", "Team Appreciation Experiences", "Employee Wellness Days", "Corporate Gift Vouchers", "Private Group Bookings"],
+      label: "Plan a team experience",
+      href: "mailto:bookings@auraretreat.co.za?subject=Corporate%20Wellness%20Enquiry",
+    },
+  ];
+
   return (
-    <section id="gift-vouchers" className="spa-section spa-section-soft">
-      <div className="spa-container spa-gift-grid">
-        <div className="spa-gift-visual">
-          <img src={content.giftVoucher.imageUrl} alt={content.giftVoucher.heading} />
+    <section id="offerings" className="spa-section spa-offerings">
+      <div className="spa-container">
+        <div className="spa-offerings-heading">
+          <div>
+            <p className="section-label">{content.giftVoucher.eyebrow}</p>
+            <h2 className="display-heading">{content.giftVoucher.heading}</h2>
+          </div>
+          <p className="section-intro">{content.giftVoucher.body}</p>
         </div>
-        <div className="spa-gift-copy">
-          <p className="spa-eyebrow">{content.giftVoucher.eyebrow}</p>
-          <h2>{content.giftVoucher.heading}</h2>
-          <p>{content.giftVoucher.body}</p>
-          <Link href={content.giftVoucher.buttonUrl} className="spa-button spa-button-primary">
-            {content.giftVoucher.buttonLabel}
-          </Link>
+        <div className="spa-offering-grid">
+          {offerings.map((offering) => (
+            <article className={`offer offer--${offering.theme} reveal`} key={offering.number}>
+              <div className="offer-topline"><span>{offering.topline}</span><span className="offer-index">{offering.number}</span></div>
+              <h3>{offering.title}</h3>
+              <div>
+                <p>{offering.description}</p>
+                <ul className="text-list">{offering.items.map((item) => <li key={item}>{item}</li>)}</ul>
+                <a className="offer-action" href={offering.href}><span>{offering.label}</span><span aria-hidden="true">↗</span></a>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
@@ -249,21 +259,39 @@ export function OfferList({ content }: HomePageProps) {
 
 export function CorporateWellbeing({ content }: HomePageProps) {
   return (
-    <section id="wellbeing" className="spa-section spa-section-soft">
-      <div className="spa-container spa-corporate-grid">
-        <div>
-          <p className="spa-eyebrow">{content.corporateWellbeing.eyebrow}</p>
-          <h2>{content.corporateWellbeing.heading}</h2>
-          <p>{content.corporateWellbeing.body}</p>
+    <section className="section events" id="events">
+      <div className="wrap events-layout">
+        <div className="reveal">
+          <p className="section-label">Gather at Aura</p>
+          <h2 className="display-heading">Celebrate life’s special moments.</h2>
+          <p className="section-intro">Share an atmosphere of luxury, ease and relaxation with the people closest to you.</p>
         </div>
+        <ul className="event-list reveal">{["Bridal Spa Parties", "Baby Showers", "Birthday Celebrations", "Couples Experiences", "Ladies’ Pamper Days", "Wellness Gatherings", "Corporate Wellness Events", "Kids’ Spa Parties"].map((event) => <li key={event}>{event}</li>)}</ul>
+      </div>
+    </section>
+  );
+}
 
-        <div className="spa-corporate-list">
-          {content.corporateWellbeing.items.map((item) => (
-            <div key={item} className="spa-corporate-item">
-              <span aria-hidden="true">•</span>
-              <p>{item}</p>
-            </div>
-          ))}
+export function ContactPayment() {
+  return (
+    <section className="section contact" id="contact" aria-labelledby="contact-heading">
+      <div className="wrap reveal">
+        <p className="section-label">Make space for yourself</p>
+        <h2 className="display-heading" id="contact-heading">Your Aura experience awaits.</h2>
+        <p className="contact-copy">Visit us at King’s Palace Hotel in Rustenburg. Connect with our team to book a treatment, arrange a group experience or select the perfect gift voucher.</p>
+        <div className="payment-details" id="payment">
+          <h3>Pay via EFT</h3>
+          <dl className="bank-details">
+            <dt>Account name</dt><dd>Aura Spa</dd>
+            <dt>Bank</dt><dd>FNB</dd>
+            <dt>Account number</dt><dd>63218435089</dd>
+            <dt>Branch code</dt><dd>202009</dd>
+          </dl>
+          <p className="payment-note">Please use your name as the payment reference and send proof of payment when booking.</p>
+        </div>
+        <div className="button-row">
+          <a className="button button-primary" href="https://wa.me/27671832446?text=Hello%20Aura%20Spa%2C%20I%27d%20like%20to%20make%20a%20booking." target="_blank" rel="noreferrer">WhatsApp Aura</a>
+          <a className="button button-secondary" href="mailto:bookings@auraretreat.co.za">Send an email</a>
         </div>
       </div>
     </section>
@@ -317,91 +345,21 @@ export function FinalCTA({ content }: HomePageProps) {
 }
 
 export function Footer({ content }: HomePageProps) {
-  const contactItems = [
-    {
-      href: `mailto:${content.footer.contactEmail}`,
-      label: content.footer.contactEmail,
-      Icon: Mail,
-    },
-    {
-      href: `tel:${content.footer.contactPhone.replace(/\s+/g, "")}`,
-      label: content.footer.contactPhone,
-      Icon: Phone,
-    },
-    {
-      href: "https://wa.me/27671832446",
-      label: "WhatsApp: +27 671 832 446",
-      Icon: MessageCircle,
-      external: true,
-    },
-    {
-      href: "https://www.instagram.com/aura_spa_rustenburg",
-      label: "Instagram: @aura_spa_rustenburg",
-      Icon: Camera,
-      external: true,
-    },
-  ];
-
   return (
-    <footer id="contact" className="spa-footer">
-      <div className="spa-container spa-footer-grid">
-        <div className="spa-footer-brand-block">
-          <div className="spa-brand spa-brand-footer">
-            <img src="/images/AuraLogo.png" alt="Aura Spa" className="spa-brand-logo spa-brand-logo-footer" />
-          </div>
-          <p>{content.footer.tagline}</p>
-          <a
-            href="https://www.google.com/maps/search/?api=1&query=King%27s+Palace+Hotel+Donkerhoek+Road+Rustenburg"
-            target="_blank"
-            rel="noreferrer"
-            className="spa-footer-address"
-            aria-label="Open Aura Spa address in Google Maps"
-          >
-            <MapPin aria-hidden="true" className="spa-contact-icon" />
-            <span>King&apos;s Palace Hotel, Donkerhoek Road, Rustenburg</span>
-          </a>
+    <footer className="site-footer">
+      <div className="footer-inner">
+        <div className="footer-brand">
+          <Link href="/" aria-label="Aura Spa home">
+            <img src="/images/AuraLogo.png" alt="Aura Spa" width="96" height="70" />
+          </Link>
         </div>
-
-        <div>
-          <h3>Quick Links</h3>
-          <ul>
-            {content.footer.quickLinks.map((item) => (
-              <li key={item.label}>
-                <Link href={item.href}>{item.label}</Link>
-              </li>
-            ))}
-          </ul>
+        <div className="footer-details">
+          <a href="https://www.google.com/maps/search/?api=1&query=King%27s%20Palace%20Hotel%2C%20Donkerhoek%20Road%2C%20Rustenburg%2C%20South%20Africa" target="_blank" rel="noreferrer">King’s Palace Hotel, Donkerhoek Road, Rustenburg</a>
+          <a href={`tel:${content.footer.contactPhone.replace(/\s+/g, "")}`}>{content.footer.contactPhone}</a>
+          <a href={`mailto:${content.footer.contactEmail}`}>{content.footer.contactEmail}</a>
+          <a href="https://www.instagram.com/aura_spa_rustenburg?igsh=bml5ZmdhcDU1Njhm" target="_blank" rel="noreferrer">Instagram</a>
         </div>
-
-        <div>
-          <h3>Contact</h3>
-          <ul className="spa-contact-list">
-            {contactItems.map(({ href, label, Icon, external }) => (
-              <li key={label}>
-                <a href={href} rel={external ? "noreferrer" : undefined} target={external ? "_blank" : undefined}>
-                  <span className="spa-contact-icon">
-                    <Icon aria-hidden="true" />
-                  </span>
-                  <span>{label}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3>Follow Us</h3>
-          <ul>
-            {content.footer.socialLinks.map((item) => (
-              <li key={item}>
-                <span className="spa-contact-icon">
-                  <Camera aria-hidden="true" />
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <span className="copyright">© {new Date().getFullYear()} Aura Spa</span>
       </div>
     </footer>
   );

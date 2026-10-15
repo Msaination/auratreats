@@ -1,18 +1,13 @@
 import {
   BrandIntro,
-  BenefitsBlock,
+  ContactPayment,
   CorporateWellbeing,
   FeatureGrid,
-  FinalCTA,
   Footer,
   GiftVoucherBlock,
-  Header,
   Hero,
-  OfferList,
-  ServicesGrid,
-  TestimonialGrid,
-  TreatmentsGrid,
 } from "@/components/home-page";
+import { RevealOnScroll } from "@/components/homepage-interactions";
 import { loadHomePageContent } from "@/lib/home-page";
 
 export default async function HomePage() {
@@ -20,19 +15,15 @@ export default async function HomePage() {
 
   return (
     <main className="spa-shell">
-      <Header content={content} />
-      <Hero content={content} />
-      <BrandIntro content={content} />
-      <FeatureGrid content={content} />
-      <ServicesGrid content={content} />
-      <TreatmentsGrid content={content} />
-      <BenefitsBlock content={content} />
+      <a className="skip-link" href="#welcome">Skip to content</a>
+      <Hero />
+      <BrandIntro />
+      <FeatureGrid />
       <GiftVoucherBlock content={content} />
-      <OfferList content={content} />
       <CorporateWellbeing content={content} />
-      <TestimonialGrid content={content} />
-      <FinalCTA content={content} />
+      <ContactPayment />
       <Footer content={content} />
+      <RevealOnScroll />
       <a
         href="https://wa.me/27671832446?text=Hello%20Aura%20Spa%2C%20I%20would%20like%20to%20enquire%20about%20a%20treatment."
         target="_blank"
