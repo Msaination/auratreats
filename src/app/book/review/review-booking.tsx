@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type {
   AvailabilityCatalog,
   AvailabilitySlot,
@@ -45,6 +45,15 @@ type DraftBooking = {
   addonServices: Array<Record<string, unknown>>;
 };
 
+type BookingAvailabilityRequest = {
+  serviceId: number;
+  therapistId: number;
+  duration: number;
+  startDate: string;
+  startMinutes: number;
+  endMinutes?: number;
+};
+
 function parseDate(value: string) {
   return new Date(`${value}T12:00:00Z`);
 }
@@ -66,11 +75,9 @@ function formatTime(minutes: number) {
   return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
-function readBookingDraft(): Record<string, unknown> {
+function parseBookingDraft(value: string | null): Record<string, unknown> {
   try {
-    const draft = JSON.parse(
-      sessionStorage.getItem("aura-booking-draft") ?? "{}",
-    );
+    const draft = JSON.parse(value ?? "{}");
 
     return draft && typeof draft === "object" && !Array.isArray(draft)
       ? (draft as Record<string, unknown>)
@@ -80,19 +87,80 @@ function readBookingDraft(): Record<string, unknown> {
   }
 }
 
+function readBookingDraft(): Record<string, unknown> {
+  return parseBookingDraft(sessionStorage.getItem("aura-booking-draft"));
+}
+
+function getBookingAvailabilityKey(booking: BookingAvailabilityRequest) {
+  return [
+    booking.serviceId,
+    booking.therapistId,
+    booking.duration,
+    booking.startDate,
+    booking.startMinutes,
+  ].join(":");
+}
+
 function isSlotStillAvailable(
   availability: AvailabilityCatalog,
-  slot: AvailabilitySlot,
+  slot: AvailabilitySlot | null,
   therapistId: number,
+  appointmentDate: string,
+  startMinutes: number,
 ) {
+  if (!slot) {
+    return false;
+  }
+
   return availability.dates.some((day) =>
-    day.slots.some(
+    day.date === appointmentDate && day.slots.some(
       (candidate) =>
-        candidate.startMinutes === slot.startMinutes &&
+        candidate.startMinutes === startMinutes &&
         candidate.endMinutes === slot.endMinutes &&
         candidate.therapistIds.includes(therapistId),
     ),
   );
+}
+
+async function checkAppointmentAvailability(
+  booking: BookingAvailabilityRequest,
+): Promise<boolean | null> {
+  const params = new URLSearchParams({
+    serviceId: String(booking.serviceId),
+    therapistId: String(booking.therapistId),
+    duration: String(booking.duration),
+    startDate: booking.startDate,
+  });
+
+  try {
+    const response = await fetch(`/api/availability?${params}`, {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const availability = (await response.json()) as Partial<AvailabilityCatalog>;
+
+    if (!Array.isArray(availability.dates)) {
+      return null;
+    }
+
+    return availability.dates.some(
+      (day) =>
+        day.date === booking.startDate &&
+        day.slots.some(
+          (candidate) =>
+            candidate.startMinutes === booking.startMinutes &&
+            (booking.endMinutes === undefined ||
+              candidate.endMinutes === booking.endMinutes) &&
+            candidate.therapistIds.includes(booking.therapistId),
+        ),
+    );
+  } catch {
+    return null;
+  }
 }
 
 function subscribeToBookingDraft() {
@@ -151,13 +219,17 @@ async function clearBookingDraftState() {
 }
 
 export function ReviewBooking({
+  appointmentDate,
   availability,
   review,
   slot,
+  startMinutes,
 }: {
+  appointmentDate: string;
   availability: AvailabilityCatalog;
   review: ReviewCatalog;
-  slot: AvailabilitySlot;
+  slot: AvailabilitySlot | null;
+  startMinutes: number;
 }) {
   const router = useRouter();
   const serializedDraft = useSyncExternalStore(
@@ -178,10 +250,16 @@ export function ReviewBooking({
   );
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [cartBookingsOverride, setCartBookingsOverride] =
+    useState<DraftBooking[] | null>(null);
+  const [bookingAvailability, setBookingAvailability] = useState<
+    Record<string, boolean | null>
+  >({});
   const draft = readBookingDraft();
-  const cartBookings = Array.isArray(draft.cartBookings)
+  const savedCartBookings = Array.isArray(draft.cartBookings)
     ? (draft.cartBookings as DraftBooking[])
     : [];
+  const cartBookings = cartBookingsOverride ?? savedCartBookings;
   const addonServices = Array.isArray(draft.addonServices)
     ? (draft.addonServices as Array<Record<string, unknown>>)
     : [];
@@ -217,36 +295,154 @@ export function ReviewBooking({
     (sum, item) => sum + Number(item.totalPrice ?? 0),
     0,
   );
-  const appointmentDate = availability.dates[0].date;
   const primaryDurationLabel = getDurationDisplayLabel(
     draft,
     Number(totalDurationMinutes ?? review.service.duration),
     Number(primaryServicePrice ?? 0),
   );
-  const selectedSlotStillAvailable = isSlotStillAvailable(
+  const currentBookingAvailabilityRequest: BookingAvailabilityRequest = {
+    serviceId: review.service.id,
+    therapistId: Number(availability.therapist.id),
+    duration: review.service.duration,
+    startDate: appointmentDate,
+    startMinutes,
+    endMinutes: slot?.endMinutes ?? Number(draft.endMinutes ?? startMinutes + review.service.duration),
+  };
+  const currentBookingAvailabilityKey = getBookingAvailabilityKey(
+    currentBookingAvailabilityRequest,
+  );
+  const serverSlotStillAvailable = isSlotStillAvailable(
     availability,
     slot,
     Number(availability.therapist.id),
+    appointmentDate,
+    startMinutes,
   );
+  const currentBookingStatus = bookingAvailability[currentBookingAvailabilityKey];
+  const currentAppointmentUnavailable =
+    currentBookingStatus === false ||
+    (currentBookingStatus === undefined && !serverSlotStillAvailable);
+  const currentAppointmentAvailable =
+    currentBookingStatus === true ||
+    (currentBookingStatus === undefined && serverSlotStillAvailable);
+  const hasUnavailableCartBooking = cartBookings.some(
+    (item) =>
+      bookingAvailability[getBookingAvailabilityKey(item)] === false,
+  );
+  const hasPendingCartAvailability = cartBookings.some((item) => {
+    const status = bookingAvailability[getBookingAvailabilityKey(item)];
+    return status === undefined;
+  });
+  const isCurrentAvailabilityPending = currentBookingStatus === undefined;
+  const hasAvailabilityError = [
+    currentBookingStatus,
+    ...cartBookings.map(
+      (item) => bookingAvailability[getBookingAvailabilityKey(item)],
+    ),
+  ].some((status) => status === null);
   const isEftPayment = paymentMethod === "local" || paymentMethod === "bacs";
   const detailsParams = new URLSearchParams({
     serviceId: String(review.service.id),
     therapistId: String(availability.therapist.id),
     duration: String(review.service.duration),
     startDate: appointmentDate,
-    startMinutes: String(slot.startMinutes),
+    startMinutes: String(startMinutes),
   });
+
+  useEffect(() => {
+    let isActive = true;
+    const savedDraft = parseBookingDraft(serializedDraft);
+    const savedBookings = Array.isArray(savedDraft.cartBookings)
+      ? (savedDraft.cartBookings as DraftBooking[])
+      : [];
+    const availabilityRequest = {
+      serviceId: review.service.id,
+      therapistId: Number(availability.therapist.id),
+      duration: review.service.duration,
+      startDate: appointmentDate,
+      startMinutes,
+      endMinutes:
+        slot?.endMinutes ??
+        Number(savedDraft.endMinutes ?? startMinutes + review.service.duration),
+    };
+    const bookingsToCheck = [
+      availabilityRequest,
+      ...savedBookings,
+    ];
+
+    async function checkAvailability() {
+      const results = await Promise.all(
+        bookingsToCheck.map(async (booking) => [
+          getBookingAvailabilityKey(booking),
+          await checkAppointmentAvailability(booking),
+        ] as const),
+      );
+
+      if (isActive) {
+        setBookingAvailability(Object.fromEntries(results));
+      }
+    }
+
+    void checkAvailability();
+
+    return () => {
+      isActive = false;
+    };
+  }, [
+    appointmentDate,
+    availability.therapist.id,
+    review.service.duration,
+    review.service.id,
+    serializedDraft,
+    slot?.endMinutes,
+    startMinutes,
+  ]);
 
   function choosePayment(methodId: string) {
     setPaymentMethod(methodId);
     setCheckoutError("");
   }
 
-  function addMoreItems() {
+  function returnToServiceSelector(nextBookings: DraftBooking[]) {
     const draft = readBookingDraft();
-    const existingBookings = Array.isArray(draft.cartBookings)
-      ? (draft.cartBookings as DraftBooking[])
-      : [];
+    sessionStorage.setItem(
+      "aura-booking-draft",
+      JSON.stringify({
+        ...draft,
+        cartBookings: nextBookings,
+        selectedServices: [],
+        addonServices: [],
+        selectedExtraIds: [],
+        primaryServiceId: null,
+        primaryServiceName: "",
+        primaryDurationId: null,
+        primaryDurationMinutes: null,
+        primaryDurationName: "",
+        primaryDurationLabel: "",
+        primaryPrice: 0,
+        addonTotal: 0,
+        totalDurationMinutes: 0,
+        totalPrice: 0,
+        durationMinutes: 0,
+        price: 0,
+        serviceId: null,
+        serviceName: "",
+        therapistId: null,
+        therapistName: "",
+        startDate: "",
+        startMinutes: null,
+        endMinutes: null,
+      }),
+    );
+    router.push("/book");
+  }
+
+  function addMoreItems() {
+    if (!slot || currentBookingStatus === false) {
+      returnToServiceSelector(cartBookings);
+      return;
+    }
+
     const currentBooking: DraftBooking = {
       serviceId: review.service.id,
       serviceName: review.service.name,
@@ -266,28 +462,24 @@ export function ReviewBooking({
       addonServices,
     };
 
+    returnToServiceSelector([...cartBookings, currentBooking]);
+  }
+
+  function removeCartBooking(indexToRemove: number) {
+    const nextBookings = cartBookings.filter(
+      (_, index) => index !== indexToRemove,
+    );
+    const draft = readBookingDraft();
+
     sessionStorage.setItem(
       "aura-booking-draft",
-      JSON.stringify({
-        ...draft,
-        cartBookings: [...existingBookings, currentBooking],
-        selectedServices: [],
-        addonServices: [],
-        selectedExtraIds: [],
-        primaryServiceId: null,
-        primaryServiceName: "",
-        primaryDurationMinutes: null,
-        primaryDurationName: "",
-        primaryDurationLabel: "",
-        primaryPrice: 0,
-        addonTotal: 0,
-        totalDurationMinutes: 0,
-        totalPrice: 0,
-        durationMinutes: 0,
-        price: 0,
-      }),
+      JSON.stringify({ ...draft, cartBookings: nextBookings }),
     );
-    router.push("/book");
+    setCartBookingsOverride(nextBookings);
+  }
+
+  function removeCurrentAppointment() {
+    returnToServiceSelector(cartBookings);
   }
 
   async function startCheckout() {
@@ -295,7 +487,19 @@ export function ReviewBooking({
       return;
     }
 
-    if (!selectedSlotStillAvailable) {
+    if (
+      hasAvailabilityError ||
+      hasUnavailableCartBooking ||
+      hasPendingCartAvailability ||
+      isCurrentAvailabilityPending
+    ) {
+      setCheckoutError(
+        "Please remove unavailable appointments or retry the availability check before checkout.",
+      );
+      return;
+    }
+
+    if (!currentAppointmentAvailable) {
       setCheckoutError("This appointment time is no longer available. Please choose another time.");
       setIsStartingCheckout(false);
       router.push(`/book/date-time?${detailsParams}`);
@@ -319,7 +523,7 @@ export function ReviewBooking({
           therapistId: availability.therapist.id,
           duration: review.service.duration,
           startDate: appointmentDate,
-          startMinutes: slot.startMinutes,
+          startMinutes,
           customer,
           addonServices: draft.addonServices ?? [],
           appointments: [
@@ -329,7 +533,7 @@ export function ReviewBooking({
               therapistId: Number(availability.therapist.id),
               duration: review.service.duration,
               startDate: appointmentDate,
-              startMinutes: slot.startMinutes,
+              startMinutes,
               totalAttendees,
               addonServices: draft.addonServices ?? [],
             },
@@ -416,7 +620,17 @@ export function ReviewBooking({
           <dl className="grid gap-5 py-6 sm:grid-cols-2">
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Treatment</dt>
-              <dd className="mt-1 font-semibold text-[#493d38]">{review.service.name}</dd>
+              <dd className="mt-1">
+                {!currentAppointmentUnavailable ? (
+                  <span className="font-semibold text-[#493d38]">
+                    {review.service.name}
+                  </span>
+                ) : (
+                  <span className="inline-flex max-w-full rounded-full border border-orange-300 bg-orange-100 px-3 py-1.5 text-sm font-semibold text-orange-900">
+                    {review.service.name} · Time unavailable
+                  </span>
+                )}
+              </dd>
               <dd className="mt-1 text-sm text-[#746760]">{primaryDurationLabel}</dd>
             </div>
             <div>
@@ -430,8 +644,19 @@ export function ReviewBooking({
             <div className="sm:col-span-2">
               <dt className="text-xs uppercase tracking-[0.14em] text-[#8a756c]">Date &amp; time</dt>
               <dd className="mt-1 font-semibold text-[#493d38]">
-                {formatDate(appointmentDate)}, {formatTime(slot.startMinutes)} - {formatTime(slot.endMinutes)}
+                {formatDate(appointmentDate)}, {formatTime(startMinutes)} - {formatTime(currentBookingAvailabilityRequest.endMinutes ?? startMinutes)}
               </dd>
+              {currentAppointmentUnavailable ? (
+                <dd className="mt-3">
+                  <button
+                    className="inline-flex min-h-10 items-center justify-center border border-orange-700 px-4 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
+                    onClick={removeCurrentAppointment}
+                    type="button"
+                  >
+                    Remove appointment
+                  </button>
+                </dd>
+              ) : null}
             </div>
           </dl>
         </section>
@@ -442,22 +667,47 @@ export function ReviewBooking({
               Already in this order
             </h2>
             <div className="mt-4 divide-y divide-[#d9cec8] border-y border-[#d9cec8]">
-              {cartBookings.map((item, index) => (
-                <div className="flex flex-wrap items-start justify-between gap-3 py-4" key={`${item.serviceId}-${item.startDate}-${item.startMinutes}-${index}`}>
-                  <div>
-                    <p className="font-semibold text-[#493d38]">{item.serviceName}</p>
-                    <p className="mt-1 text-sm text-[#746760]">
-                      {item.therapistName} · {formatDate(item.startDate)} · {formatTime(item.startMinutes)}
-                    </p>
+              {cartBookings.map((item, index) => {
+                const isAvailable =
+                  bookingAvailability[getBookingAvailabilityKey(item)];
+
+                return (
+                  <div
+                    className="flex flex-wrap items-start justify-between gap-3 py-4"
+                    key={`${item.serviceId}-${item.startDate}-${item.startMinutes}-${index}`}
+                  >
+                    <div>
+                      {isAvailable === false ? (
+                        <span className="inline-flex max-w-full rounded-full border border-orange-300 bg-orange-100 px-3 py-1.5 text-sm font-semibold text-orange-900">
+                          {item.serviceName} · Time unavailable
+                        </span>
+                      ) : (
+                        <p className="font-semibold text-[#493d38]">
+                          {item.serviceName}
+                        </p>
+                      )}
+                      <p className="mt-1 text-sm text-[#746760]">
+                        {item.therapistName} · {formatDate(item.startDate)} · {formatTime(item.startMinutes)}
+                      </p>
+                      {isAvailable === false ? (
+                        <button
+                          className="mt-2 inline-flex min-h-9 items-center justify-center border border-orange-700 px-3 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
+                          onClick={() => removeCartBooking(index)}
+                          type="button"
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                    <span className="text-sm font-semibold text-[#5f4037]">
+                      {new Intl.NumberFormat("en-ZA", {
+                        style: "currency",
+                        currency: "ZAR",
+                      }).format(item.totalPrice)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold text-[#5f4037]">
-                    {new Intl.NumberFormat("en-ZA", {
-                      style: "currency",
-                      currency: "ZAR",
-                    }).format(item.totalPrice)}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ) : null}
@@ -651,9 +901,27 @@ export function ReviewBooking({
             })}
           </div>
         </div>
+        {isCurrentAvailabilityPending || hasPendingCartAvailability ? (
+          <p aria-live="polite" className="mt-4 text-center text-xs text-[#786b65]">
+            Checking appointment availability...
+          </p>
+        ) : null}
+        {hasAvailabilityError ? (
+          <p aria-live="polite" className="mt-4 text-center text-xs text-orange-900">
+            Could not verify live availability. Refresh this page to check again before checkout.
+          </p>
+        ) : null}
         <button
           className="mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
-          disabled={!paymentMethod || isStartingCheckout || !selectedSlotStillAvailable}
+          disabled={
+            !paymentMethod ||
+            isStartingCheckout ||
+            !currentAppointmentAvailable ||
+            isCurrentAvailabilityPending ||
+            hasUnavailableCartBooking ||
+            hasPendingCartAvailability ||
+            hasAvailabilityError
+          }
           onClick={startCheckout}
           type="button"
         >

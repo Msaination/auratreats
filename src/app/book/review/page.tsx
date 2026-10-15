@@ -59,11 +59,14 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     }).catch(() => null),
     getReview(serviceId, duration).catch(() => null),
   ]);
-  const selectedSlot = availability?.dates[0]?.slots.find(
+  const appointmentDay = availability?.dates.find(
+    (day) => day.date === startDate,
+  );
+  const selectedSlot = appointmentDay?.slots.find(
     (slot) =>
       slot.startMinutes === startMinutes &&
       slot.therapistIds.includes(therapistId),
-  );
+  ) ?? null;
   const dateTimeParams = new URLSearchParams({
     serviceId: String(serviceId),
     therapistId: String(therapistId),
@@ -107,11 +110,13 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
           </p>
         </div>
 
-        {availability && review && selectedSlot ? (
+        {availability && review ? (
           <ReviewBooking
             availability={availability}
+            appointmentDate={startDate}
             review={review}
             slot={selectedSlot}
+            startMinutes={startMinutes}
           />
         ) : (
           <section className="border-y border-[#cbbdb6] py-16 text-center">
