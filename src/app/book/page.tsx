@@ -46,23 +46,8 @@ export default async function BookPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-[#695a55] lg:justify-end">
-              {[
-                "Wellness",
-                "Beauty",
-                "Restoration",
-              ].map((tag, index) => (
-                <div className="flex items-center gap-2" key={tag}>
-                  {index > 0 ? (
-                    <span aria-hidden="true" className="text-[10px] font-semibold">
-                      ·
-                    </span>
-                  ) : null}
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">
-                    {tag}
-                  </span>
-                </div>
-              ))}
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#695a55] lg:text-right">
+              Relax . Restore . Rejuvenate
             </div>
           </div>
         </div>

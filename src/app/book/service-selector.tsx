@@ -1052,7 +1052,7 @@ export function ServiceSelector({
                     </span>
 
                     {bundle.shortDescription ? (
-                      <span className="mt-3 block text-sm leading-6 text-[#746760]">
+                      <span className="booking-radius mt-3 block border border-[#e2cfc6] bg-[#f8eee9] px-3 py-2.5 text-sm leading-6 text-[#746760]">
                         {bundle.shortDescription}
                       </span>
                     ) : null}

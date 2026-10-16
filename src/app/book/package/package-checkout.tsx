@@ -200,7 +200,9 @@ export function PackageCheckout({
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a756c]">Package summary</p>
         <h2 className="mt-4 font-serif text-2xl text-[#352d2a]">{bundle.name}</h2>
         {bundle.shortDescription ? (
-          <p className="mt-2 text-sm leading-6 text-[#746760]">{bundle.shortDescription}</p>
+          <p className="booking-radius mt-3 border border-[#e2cfc6] bg-[#f8eee9] px-3 py-2.5 text-sm leading-6 text-[#746760]">
+            {bundle.shortDescription}
+          </p>
         ) : null}
         <div className="mt-5 space-y-3 border-y border-[#d9cec8] py-4">
           {bundle.includedServices.map((service) => (
