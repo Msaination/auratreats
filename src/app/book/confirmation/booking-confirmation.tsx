@@ -351,7 +351,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
       <section
         aria-labelledby="confirmation-title"
         aria-modal="true"
-        className="relative z-10 w-full max-w-4xl border border-[#cbbdb6] bg-[#f8f4f1] shadow-2xl"
+        className="booking-radius relative z-10 w-full max-w-4xl border border-[#cbbdb6] bg-[#f8f4f1] shadow-2xl"
         role="dialog"
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -374,7 +374,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
 
         <button
           aria-label="Close confirmation and return home"
-          className="absolute right-4 top-4 flex size-10 items-center justify-center border border-[#cbbdb6] bg-[#f8f4f1] text-[#5f4037] transition hover:bg-[#eee2dc]"
+          className="booking-radius absolute right-4 top-4 flex size-10 items-center justify-center border border-[#cbbdb6] bg-[#f8f4f1] text-[#5f4037] transition hover:bg-[#eee2dc]"
           onClick={closeConfirmation}
           title="Close"
           type="button"
@@ -460,7 +460,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
                     </div>
                     {booking.calendarDataUri ? (
                       <a
-                        className="inline-flex h-10 items-center gap-2 border border-[#6f5047] px-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
+                        className="booking-radius inline-flex h-10 items-center gap-2 border border-[#6f5047] px-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
                         download={`aura-spa-${booking.code}.ics`}
                         href={booking.calendarDataUri}
                       >
@@ -519,7 +519,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
                 width={176}
               />
             ) : null}
-            <div className="mt-4 rounded-[1rem] border border-[#d9cec8] bg-white/70 p-3 text-left">
+            <div className="booking-radius mt-4 border border-[#d9cec8] bg-white/70 p-3 text-left">
               <div className="flex items-center justify-between text-sm text-[#746760]">
                 <span>Bundle total</span>
                 <span>{totalDurationMinutes} min</span>
@@ -530,7 +530,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
               </div>
             </div>
             <a
-              className="mt-5 inline-flex h-11 items-center justify-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f8f4f1]"
+              className="booking-radius mt-5 inline-flex h-11 items-center justify-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f8f4f1]"
               download={`aura-spa-${confirmation.code}.ics`}
               href={confirmation.calendarDataUri}
             >
@@ -541,7 +541,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
         </div>
         <div className="flex justify-center border-t border-[#d9cec8] px-6 py-5">
           <button
-            className="inline-flex h-11 items-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
+            className="booking-radius inline-flex h-11 items-center gap-2 border border-[#6f5047] px-4 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc]"
             onClick={closeConfirmation}
             type="button"
           >

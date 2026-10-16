@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookingProgress } from "../progress";
+import { BookingHeader } from "../booking-header";
 import { ReviewBooking } from "./review-booking";
 import { getAvailability, getReview } from "@/lib/latepoint";
 
@@ -75,17 +76,8 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   });
 
   return (
-    <main className="min-h-screen bg-[#f3eee9] text-[#352d2a]">
-      <header className="border-b border-[#cbbdb6] bg-[#f8f4f1]">
-        <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
-          <Link className="font-serif text-2xl" href="/">
-            Aura Spa
-          </Link>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#806b62]">
-            Book an appointment
-          </span>
-        </div>
-      </header>
+    <main className="booking-flow min-h-screen bg-[#f3eee9] text-[#352d2a]">
+      <BookingHeader />
 
       <BookingProgress
         steps={[

@@ -596,7 +596,7 @@ export function ReviewBooking({
           Add your contact details before reviewing this appointment.
         </p>
         <Link
-          className="mt-6 inline-flex h-11 items-center justify-center border border-[#6f5047] px-5 text-sm font-semibold text-[#6f5047]"
+          className="booking-radius mt-6 inline-flex h-11 items-center justify-center border border-[#6f5047] px-5 text-sm font-semibold text-[#6f5047]"
           href={`/book/details?${detailsParams}`}
         >
           Enter your details
@@ -652,7 +652,7 @@ export function ReviewBooking({
               {currentAppointmentUnavailable ? (
                 <dd className="mt-3">
                   <button
-                    className="inline-flex min-h-10 items-center justify-center border border-orange-700 px-4 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
+                    className="booking-radius inline-flex min-h-10 items-center justify-center border border-orange-700 px-4 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
                     onClick={removeCurrentAppointment}
                     type="button"
                   >
@@ -694,7 +694,7 @@ export function ReviewBooking({
                       </p>
                       {isAvailable === false ? (
                         <button
-                          className="mt-2 inline-flex min-h-9 items-center justify-center border border-orange-700 px-3 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
+                          className="booking-radius mt-2 inline-flex min-h-9 items-center justify-center border border-orange-700 px-3 text-sm font-semibold text-orange-900 transition hover:bg-orange-50"
                           onClick={() => removeCartBooking(index)}
                           type="button"
                         >
@@ -837,7 +837,7 @@ export function ReviewBooking({
           )}
 
           {isEftPayment ? (
-            <div className="mt-5 rounded-[1.25rem] border border-[#d9cec8] bg-[#f9f3f1] p-4 text-sm leading-6 text-[#524844]">
+            <div className="booking-radius mt-5 border border-[#d9cec8] bg-[#f9f3f1] p-4 text-sm leading-6 text-[#524844]">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#6f5047]">EFT banking details</p>
               <ul className="mt-3 space-y-1">
                 <li><span className="font-medium text-[#493d38]">Bank:</span> FNB</li>
@@ -868,7 +868,7 @@ export function ReviewBooking({
           {checkoutError ||
             "Your appointment is booked when you confirm below."}
         </p>
-        <div className="mt-4 rounded-[1rem] border border-[#d9cec8] bg-white/60 p-3 text-sm text-[#746760]">
+        <div className="booking-radius mt-4 border border-[#d9cec8] bg-white/60 p-3 text-sm text-[#746760]">
           <div className="flex items-center justify-between">
             <span>Services</span>
             <span>{totalDurationMinutes} min</span>
@@ -915,7 +915,7 @@ export function ReviewBooking({
           </p>
         ) : null}
         <button
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
+          className="booking-radius mt-3 flex h-12 w-full items-center justify-center gap-2 bg-[#352d2a] px-5 font-semibold text-white transition enabled:hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#a99c96]"
           disabled={
             !paymentMethod ||
             isStartingCheckout ||
@@ -945,7 +945,7 @@ export function ReviewBooking({
           Back to details
         </Link>
         <button
-          className="mt-3 flex min-h-12 w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc] disabled:cursor-not-allowed disabled:opacity-50"
+          className="booking-radius mt-3 flex min-h-12 w-full items-center justify-center gap-2 border border-[#6f5047] px-4 py-3 text-sm font-semibold text-[#6f5047] transition hover:bg-[#eee2dc] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isStartingCheckout}
           onClick={addMoreItems}
           type="button"

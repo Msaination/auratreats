@@ -15,6 +15,7 @@
   --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
   --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --control-radius: 8px;
   --warm-white: var(--paper);
   --soft-beige: var(--cream);
   --dark-charcoal: var(--ink);
@@ -266,7 +267,7 @@ body.menu-open { overflow: hidden; }
   justify-content: center;
   min-height: 3.25rem;
   padding: 0.8rem 1.2rem;
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   border: 1px solid transparent;
   color: inherit;
   text-decoration: none;
@@ -339,7 +340,7 @@ body.menu-open { overflow: hidden; }
 .offerings { background: var(--paper); }
 .section-intro { max-width: 39rem; margin-bottom: 3.5rem; color: var(--ink-soft); font-size: 1.05rem; line-height: 1.75; }
 .offer-grid { display: grid; gap: 0.85rem; }
-.offer { position: relative; display: flex; min-height: 30rem; padding: clamp(1.6rem, 4vw, 2.6rem); flex-direction: column; isolation: isolate; overflow: hidden; }
+.offer { position: relative; display: flex; min-height: 30rem; padding: clamp(1.6rem, 4vw, 2.6rem); flex-direction: column; isolation: isolate; overflow: hidden; border-radius: var(--control-radius); }
 .offer::before, .offer::after { position: absolute; z-index: -1; content: ""; pointer-events: none; }
 .offer::before { right: -4rem; bottom: -7rem; width: 18rem; height: 28rem; border: 1px solid currentColor; opacity: 0.18; transform: rotate(28deg); }
 .offer::after { right: 2.5rem; bottom: 2.5rem; width: 5rem; height: 1px; background: currentColor; opacity: 0.28; }
@@ -353,7 +354,7 @@ body.menu-open { overflow: hidden; }
 .text-list { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin: 0; padding: 0; list-style: none; }
 .text-list li { position: relative; padding-left: 0.9rem; color: currentColor; font-size: 0.78rem; line-height: 1.5; }
 .text-list li::before { position: absolute; top: 0.55em; left: 0; width: 0.3rem; height: 0.3rem; content: ""; background: currentColor; border-radius: 50%; }
-.offer-action { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 3.4rem; margin-top: 2rem; padding: 0.85rem 1rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-decoration: none; text-transform: uppercase; border: 1px solid currentColor; transition: color 0.25s ease, background 0.25s ease; }
+.offer-action { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 3.4rem; margin-top: 2rem; padding: 0.85rem 1rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em; text-decoration: none; text-transform: uppercase; border: 1px solid currentColor; border-radius: var(--control-radius); transition: color 0.25s ease, background 0.25s ease; }
 .offer-action span:last-child { font-size: 1.1rem; }
 .offer-action:hover { color: var(--ink); background: var(--paper); }
 
@@ -476,6 +477,29 @@ body.menu-open { overflow: hidden; }
 .spa-button-secondary:focus-visible {
   background: rgba(255, 255, 255, 0.18);
   border-color: #fff;
+}
+
+.booking-flow .booking-radius { border-radius: var(--control-radius); }
+
+.booking-flow :is(button, input, textarea, select) {
+  border-radius: var(--control-radius);
+}
+
+.booking-flow a:is([class*="inline-flex"], [class*="items-center"][class*="h-"]) {
+  border-radius: var(--control-radius);
+}
+
+.booking-flow button[aria-label^="Remove "] {
+  border-radius: 9999px;
+}
+
+.booking-flow :is(.rounded-full[aria-pressed], [aria-pressed] .rounded-full) {
+  border-radius: 9999px;
+}
+
+.booking-flow [role="dialog"] {
+  border-radius: var(--control-radius);
+  overflow: hidden;
 }
 
 .spa-button-policy {

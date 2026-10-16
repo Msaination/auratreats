@@ -443,7 +443,7 @@ export function DetailsForm({
             </dd>
           </div>
 
-          <div className="rounded-[1rem] border border-[#d9cec8] bg-white/60 p-3">
+          <div className="booking-radius border border-[#d9cec8] bg-white/60 p-3">
             <div className="flex items-center justify-between text-sm text-[#746760]">
               <span>Bundle total</span>
               <span>{totalDurationMinutes} min</span>

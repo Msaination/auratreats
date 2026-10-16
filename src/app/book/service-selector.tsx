@@ -580,7 +580,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   }
 
   return (
-    <div className="rounded-[1.75rem] border border-[#d9c9bf] bg-[#fbf7f4] p-3 shadow-[0_18px_40px_rgba(90,72,64,0.04)] sm:p-5 lg:p-6">
+    <div className="booking-radius border border-[#d9c9bf] bg-[#fbf7f4] p-3 shadow-[0_18px_40px_rgba(90,72,64,0.04)] sm:p-5 lg:p-6">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#8a756c]">
@@ -691,7 +691,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       ) : null}
 
       {selectedPrimary ? (
-        <div className="mb-5 rounded-[1.25rem] border border-[#d9b9aa] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] p-3 shadow-[0_12px_26px_rgba(88,68,59,0.06)] sm:p-4">
+        <div className="booking-radius mb-5 border border-[#d9b9aa] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] p-3 shadow-[0_12px_26px_rgba(88,68,59,0.06)] sm:p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-[#8a756c]">
@@ -761,7 +761,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
               ) : null}
 
               {selectedPrimary ? (
-                <div className="mt-4 rounded-[1rem] border border-[#d9c5bb] bg-[#fffdfb] p-3">
+                <div className="booking-radius mt-4 border border-[#d9c5bb] bg-[#fffdfb] p-3">
                   <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8a756c]">
                     Total Attendees
                   </p>
@@ -1074,7 +1074,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
             })}
           </div>
         ) : (
-          <div className="rounded-[1.5rem] border border-[#d9c9bf] bg-[#f9f3f0] py-16 text-center">
+          <div className="booking-radius border border-[#d9c9bf] bg-[#f9f3f0] py-16 text-center">
             <p className="font-serif text-2xl text-[#493d38]">No treatments found</p>
             <button
               className="mt-4 text-sm font-semibold text-[#79594f] underline underline-offset-4"
