@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BookingHeader } from "./booking-header";
 import { BookingProgress } from "./progress";
 import { ServiceSelector } from "./service-selector";
-import { getServiceCatalog } from "@/lib/latepoint";
+import { getBundleCatalog, getServiceCatalog } from "@/lib/latepoint";
 
 export const metadata: Metadata = {
   title: "Choose a Treatment | Aura Spa",
@@ -12,7 +12,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function BookPage() {
-  const catalog = await getServiceCatalog().catch(() => null);
+  const [catalog, bundleCatalog] = await Promise.all([
+    getServiceCatalog().catch(() => null),
+    getBundleCatalog().catch(() => null),
+  ]);
 
   return (
     <main className="booking-flow min-h-screen bg-[#f3eee9] text-[#352d2a]">
@@ -65,7 +68,10 @@ export default async function BookPage() {
         </div>
 
         {catalog ? (
-          <ServiceSelector {...catalog} />
+          <ServiceSelector
+            {...catalog}
+            bundles={bundleCatalog?.bundles ?? []}
+          />
         ) : (
           <section className="booking-radius border border-[#d9c9bf] bg-[#faf6f3] py-16 text-center shadow-[0_18px_40px_rgba(90,72,64,0.04)]">
             <h2 className="font-serif text-3xl text-[#352d2a]">Treatments are unavailable</h2>

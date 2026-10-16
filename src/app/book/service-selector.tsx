@@ -28,6 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type {
+  LatePointBundle,
   LatePointService,
   ServiceCatalog,
   ServiceDuration,
@@ -37,6 +38,16 @@ type Selection = {
   service: LatePointService;
   duration: ServiceDuration;
 };
+
+const LATEPOINT_CATEGORY_ORDER = [
+  "massage",
+  "body treatments",
+  "hand & foot spa",
+  "nails",
+  "facials",
+  "waxing",
+  "aura kids",
+];
 
 function readBookingDraft(): Record<string, unknown> {
   try {
@@ -149,7 +160,10 @@ function getCapacityBounds(service: LatePointService | null) {
   return { minimum, maximum };
 }
 
-export function ServiceSelector({ categories }: ServiceCatalog) {
+export function ServiceSelector({
+  bundles,
+  categories,
+}: ServiceCatalog & { bundles: LatePointBundle[] }) {
   const serializedDraft = useSyncExternalStore(
     subscribeToBookingDraft,
     getBookingDraftSnapshot,
@@ -218,11 +232,17 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       },
     ];
   });
-  const nestedParentIds = new Set(nestedCategoryGroups.map((group) => group.parentId));
   const nestedSubcategoryIds = new Set(
     nestedCategoryGroups.flatMap((group) => group.subcategories.map((subcategory) => subcategory.id)),
   );
-  const [activeCategoryId, setActiveCategoryId] = useState<number | "all">("all");
+  const restoredSelectedServices = restoreSelectedServices(storedDraft, categories);
+  const storedBundleId = Number(storedDraft.selectedBundleId ?? 0);
+  const [activeCategoryOverride, setActiveCategoryOverride] = useState<
+    number | "all" | "packages" | null
+  >(null);
+  const activeCategoryId =
+    activeCategoryOverride ??
+    (bundles.some((bundle) => bundle.id === storedBundleId) ? "packages" : "all");
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Record<number, boolean>>(
     () =>
       Object.fromEntries(
@@ -230,7 +250,15 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
-  const restoredSelectedServices = restoreSelectedServices(storedDraft, categories);
+  const [selectedBundleIdOverride, setSelectedBundleIdOverride] = useState<
+    number | null | undefined
+  >(undefined);
+  const selectedBundleId =
+    selectedBundleIdOverride === undefined
+      ? bundles.some((bundle) => bundle.id === storedBundleId)
+        ? storedBundleId
+        : null
+      : selectedBundleIdOverride;
   const draftAddonServices = Array.isArray(storedDraft.addonServices)
     ? (storedDraft.addonServices as Array<Record<string, unknown>>)
     : [];
@@ -287,20 +315,50 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     selectedExtraDurationMinutes;
   const bundlePrice = primaryServiceTotal + selectedExtraPrice;
 
-  const displayCategories = nestedCategoryGroups.length
-    ? [
-        ...nestedCategoryGroups.map((group) => group.section),
-        ...categories.filter(
-          (category) =>
-            !nestedParentIds.has(category.id) &&
-            !nestedSubcategoryIds.has(category.id),
-        ),
-      ]
-    : categories;
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const nestedGroupByParentId = new Map(
+    nestedCategoryGroups.map((group) => [group.parentId, group]),
+  );
+  const displayedCategoryIds = new Set<number>();
+  const displayCategories = categories.flatMap((category) => {
+    const parentId = category.parentId ?? category.id;
+    const group = nestedGroupByParentId.get(parentId);
 
-  const categoryTabs = displayCategories;
+    if (group) {
+      if (displayedCategoryIds.has(parentId)) {
+        return [];
+      }
 
-  const visibleCategories = displayCategories
+      displayedCategoryIds.add(parentId);
+      return [group.section];
+    }
+
+    if (nestedSubcategoryIds.has(category.id)) {
+      return [];
+    }
+
+    if (category.parentId !== null || displayedCategoryIds.has(category.id)) {
+      return [];
+    }
+
+    displayedCategoryIds.add(category.id);
+    return [categoryById.get(category.id) ?? category];
+  });
+
+  const categoryOrder = new Map(
+    LATEPOINT_CATEGORY_ORDER.map((name, index) => [name, index]),
+  );
+  const categoryTabs = [...displayCategories].sort((left, right) => {
+    const leftOrder = categoryOrder.get(left.name.trim().toLowerCase());
+    const rightOrder = categoryOrder.get(right.name.trim().toLowerCase());
+
+    return (
+      (leftOrder ?? Number.MAX_SAFE_INTEGER) -
+      (rightOrder ?? Number.MAX_SAFE_INTEGER)
+    );
+  });
+
+  const visibleCategories = categoryTabs
     .filter((category) => activeCategoryId === "all" || category.id === activeCategoryId)
     .map((category) => ({
       ...category,
@@ -315,12 +373,24 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       }),
     }))
     .filter((category) => category.services.length > 0);
+  const visibleBundles = bundles.filter((bundle) => {
+    if (!deferredQuery) {
+      return true;
+    }
+
+    const includedServiceNames = bundle.includedServices
+      .map((service) => service.name)
+      .join(" ");
+    return `${bundle.name} ${bundle.shortDescription} ${includedServiceNames}`
+      .toLocaleLowerCase()
+      .includes(deferredQuery);
+  });
 
   function toggleCategory(categoryId: number) {
     const isNestedSection = nestedCategoryGroups.some((group) => group.parentId === categoryId);
 
     if (isNestedSection) {
-      setActiveCategoryId(categoryId);
+      setActiveCategoryOverride(categoryId);
       setExpandedCategoryIds((current) => ({
         ...Object.fromEntries(
           Object.keys(current).map((key) => [Number(key), false]),
@@ -336,10 +406,10 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     }));
   }
 
-  function selectCategory(categoryId: number | "all") {
-    setActiveCategoryId(categoryId);
+  function selectCategory(categoryId: number | "all" | "packages") {
+    setActiveCategoryOverride(categoryId);
 
-    if (categoryId === "all") {
+    if (categoryId === "all" || categoryId === "packages") {
       setExpandedCategoryIds((current) =>
         Object.fromEntries(
           Object.keys(current).map((key) => [Number(key), false]),
@@ -371,6 +441,10 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   }, 0);
 
   function selectService(service: LatePointService) {
+    if (selectedBundleId !== null) {
+      setSelectedBundleIdOverride(null);
+    }
+
     const duration = service.durations[0] ?? {
       id: "default",
       name: "",
@@ -400,6 +474,10 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
   }
 
   function chooseServiceDuration(service: LatePointService, duration: ServiceDuration) {
+    if (selectedBundleId !== null) {
+      setSelectedBundleIdOverride(null);
+    }
+
     const isAlreadySelected = selectedServices.some(
       (candidate) => candidate.service.id === service.id,
     );
@@ -553,6 +631,8 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
+        selectedBundleId: null,
+        selectedBundleName: "",
         selectedServices: selectedEntries,
         primaryServiceId: primarySelection.serviceId,
         primaryServiceName: primarySelection.serviceName,
@@ -576,6 +656,52 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
     );
     startTransition(() => {
       router.push(`/book/therapist?serviceId=${primarySelection.serviceId}`);
+    });
+  }
+
+  function selectBundle(bundle: LatePointBundle) {
+    const isSelected = selectedBundleId === bundle.id;
+    setSelectedBundleIdOverride(isSelected ? null : bundle.id);
+
+    if (!isSelected) {
+      return;
+    }
+
+    const draft = readBookingDraft();
+    sessionStorage.setItem(
+      "aura-booking-draft",
+      JSON.stringify({
+        ...draft,
+        selectedBundleId: null,
+        selectedBundleName: "",
+        packagePrice: 0,
+      }),
+    );
+
+    setSelectedServicesOverride([]);
+    setSelectedExtraIdsOverride([]);
+  }
+
+  function saveBundleSelection() {
+    const selectedBundle = bundles.find((bundle) => bundle.id === selectedBundleId);
+    if (!selectedBundle) {
+      return;
+    }
+
+    const draft = readBookingDraft();
+    sessionStorage.setItem(
+      "aura-booking-draft",
+      JSON.stringify({
+        ...draft,
+        selectedServices: [],
+        addonServices: [],
+        selectedBundleId: selectedBundle.id,
+        selectedBundleName: selectedBundle.name,
+        packagePrice: selectedBundle.price.amount,
+      }),
+    );
+    startTransition(() => {
+      router.push(`/book/package?bundleId=${selectedBundle.id}`);
     });
   }
 
@@ -840,6 +966,25 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
         >
           <span>All</span>
         </button>
+        {bundles.length > 0 ? (
+          <button
+            aria-selected={activeCategoryId === "packages"}
+            className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
+              activeCategoryId === "packages"
+                ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
+                : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
+            }`}
+            onClick={() => selectCategory("packages")}
+            role="tab"
+            type="button"
+          >
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            <span>Packages</span>
+            <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[9px]">
+              {bundles.length}
+            </span>
+          </button>
+        ) : null}
         {categoryTabs.map((category) => {
           const CategoryIcon = getCategoryIcon(category.name);
 
@@ -865,10 +1010,91 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
 
       <div className="min-w-0 w-full">
         <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#786b65]" aria-live="polite">
-          {visibleTotal} {visibleTotal === 1 ? "treatment" : "treatments"}
+          {activeCategoryId === "packages"
+            ? `${visibleBundles.length} ${visibleBundles.length === 1 ? "package" : "packages"}`
+            : `${visibleTotal} ${visibleTotal === 1 ? "treatment" : "treatments"}`}
         </p>
 
-        {visibleCategories.length ? (
+        {activeCategoryId === "packages" ? (
+          visibleBundles.length ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleBundles.map((bundle) => {
+                const isSelected = selectedBundleId === bundle.id;
+                const includedCount = bundle.includedServices.reduce(
+                  (count, service) => count + service.quantity,
+                  0,
+                );
+
+                return (
+                  <button
+                    aria-pressed={isSelected}
+                    className={`booking-radius h-full border p-4 text-left transition sm:p-5 ${
+                      isSelected
+                        ? "border-[#5f4037] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] shadow-[0_16px_35px_rgba(88,68,59,0.08)]"
+                        : "border-[#e7ddd7] bg-[linear-gradient(180deg,#ffffff_0%,#fdf9f7_100%)] hover:border-[#c9a99a] hover:shadow-[0_10px_25px_rgba(88,68,59,0.04)]"
+                    }`}
+                    key={bundle.id}
+                    onClick={() => selectBundle(bundle)}
+                    type="button"
+                  >
+                    <span className="flex items-start justify-between gap-3">
+                      <span>
+                        <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.24em] text-[#8a756c]">
+                          {isSelected ? "Selected package" : "Aura package"}
+                        </span>
+                        <span className="block font-serif text-2xl text-[#352d2a]">
+                          {bundle.name}
+                        </span>
+                      </span>
+                      {isSelected ? (
+                        <Check aria-hidden="true" className="size-5 shrink-0 text-[#7c554a]" />
+                      ) : null}
+                    </span>
+
+                    {bundle.shortDescription ? (
+                      <span className="mt-3 block text-sm leading-6 text-[#746760]">
+                        {bundle.shortDescription}
+                      </span>
+                    ) : null}
+
+                    <span className="mt-4 flex items-center justify-between gap-3 border-t border-[#eaded8] pt-3 text-sm text-[#746760]">
+                      <span>{includedCount} included session{includedCount === 1 ? "" : "s"}</span>
+                      <span className="font-semibold text-[#5f4037]">
+                        {bundle.price.formatted}
+                      </span>
+                    </span>
+
+                    <span className="mt-3 block space-y-1.5 border-t border-[#eaded8] pt-3">
+                      {bundle.includedServices.map((service) => (
+                        <span
+                          className="flex items-center justify-between gap-3 text-xs text-[#655852]"
+                          key={service.id}
+                        >
+                          <span>{service.name}</span>
+                          <span className="shrink-0 text-[#8a756c]">
+                            {service.quantity > 1 ? `${service.quantity} × ` : ""}
+                            {service.durationMinutes} min
+                          </span>
+                        </span>
+                      ))}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="booking-radius border border-[#d9c9bf] bg-[#f9f3f0] py-16 text-center">
+              <p className="font-serif text-2xl text-[#493d38]">No packages found</p>
+              <button
+                className="mt-4 text-sm font-semibold text-[#79594f] underline underline-offset-4"
+                onClick={() => setQuery("")}
+                type="button"
+              >
+                Clear search
+              </button>
+            </div>
+          )
+        ) : visibleCategories.length ? (
           <div className="space-y-7">
             {visibleCategories.map((category) => {
               const isCollapsed = expandedCategoryIds[category.id] === false;
@@ -1080,7 +1306,7 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
               className="mt-4 text-sm font-semibold text-[#79594f] underline underline-offset-4"
               onClick={() => {
                 setQuery("");
-                setActiveCategoryId("all");
+                setActiveCategoryOverride("all");
               }}
               type="button"
             >
@@ -1093,11 +1319,20 @@ export function ServiceSelector({ categories }: ServiceCatalog) {
       <div className="mt-6 flex justify-end">
         <button
           className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#352d2a] px-4 text-sm font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:bg-[#d5c4ba] disabled:text-[#7e6e67]"
-          disabled={!selectedServices.length || isPending}
-          onClick={saveSelection}
+          disabled={
+            isPending ||
+            (activeCategoryId === "packages"
+              ? selectedBundleId === null
+              : !selectedServices.length)
+          }
+          onClick={activeCategoryId === "packages" ? saveBundleSelection : saveSelection}
           type="button"
         >
-          {isPending ? "Preparing..." : "Continue"}
+          {isPending
+            ? "Preparing..."
+            : activeCategoryId === "packages"
+              ? "Purchase package"
+              : "Continue"}
           {!isPending ? <ArrowRight className="size-4" /> : null}
         </button>
       </div>

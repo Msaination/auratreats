@@ -55,6 +55,33 @@ export type ServiceCatalog = {
   total: number;
 };
 
+export type LatePointBundle = {
+  id: number;
+  name: string;
+  shortDescription: string;
+  price: {
+    amount: number;
+    formatted: string;
+  };
+  includedServices: Array<{
+    id: number;
+    name: string;
+    quantity: number;
+    durationMinutes: number;
+  }>;
+};
+
+export type BundleCatalog = {
+  bundles: LatePointBundle[];
+  total: number;
+};
+
+export type PaymentMethod = {
+  id: string;
+  name: string;
+  description: string;
+};
+
 export type Therapist = {
   id: number;
   name: string;
@@ -126,12 +153,56 @@ export type ReviewCatalog = {
     amount: number;
     formatted: string;
   };
-  paymentMethods: Array<{
-    id: string;
-    name: string;
-    description: string;
-  }>;
+  paymentMethods: PaymentMethod[];
 };
+
+export async function getBundleCatalog(): Promise<BundleCatalog> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/bundles`, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Aura bundles request failed: ${response.status}`);
+  }
+
+  const catalog = (await response.json()) as Partial<BundleCatalog>;
+
+  if (!Array.isArray(catalog.bundles) || typeof catalog.total !== "number") {
+    throw new Error("Aura bundles returned an invalid response.");
+  }
+
+  return catalog as BundleCatalog;
+}
+
+export async function getPaymentMethods(
+  type: "appointment" | "bundle" = "appointment",
+): Promise<PaymentMethod[]> {
+  const params = new URLSearchParams({ type });
+  const response = await fetch(
+    `${apiBaseUrl.replace(/\/$/, "")}/payment-methods?${params}`,
+    {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+    },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Aura payment methods request failed: ${response.status}`);
+  }
+
+  const result = (await response.json()) as { paymentMethods?: PaymentMethod[] };
+
+  if (!Array.isArray(result.paymentMethods)) {
+    throw new Error("Aura payment methods returned an invalid response.");
+  }
+
+  return result.paymentMethods;
+}
 
 export async function getServiceCatalog(): Promise<ServiceCatalog> {
   const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/services`, {

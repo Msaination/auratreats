@@ -32,10 +32,14 @@ export async function POST(request: Request) {
     const result = (await response.json()) as {
       checkoutUrl?: string;
       confirmation?: Record<string, unknown>;
+      packageConfirmation?: Record<string, unknown>;
       message?: string;
     };
 
-    if (!response.ok || (!result.checkoutUrl && !result.confirmation)) {
+    if (
+      !response.ok ||
+      (!result.checkoutUrl && !result.confirmation && !result.packageConfirmation)
+    ) {
       return NextResponse.json(
         { message: result.message ?? "Checkout could not be started." },
         { status: response.status || 502 },
@@ -45,7 +49,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       result.confirmation
         ? { confirmation: result.confirmation }
-        : { checkoutUrl: result.checkoutUrl },
+        : result.packageConfirmation
+          ? { packageConfirmation: result.packageConfirmation }
+          : { checkoutUrl: result.checkoutUrl },
     );
   } catch {
     return NextResponse.json(
