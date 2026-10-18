@@ -357,6 +357,10 @@ export function ServiceSelector({
       (rightOrder ?? Number.MAX_SAFE_INTEGER)
     );
   });
+  const totalServiceCount = displayCategories.reduce(
+    (total, category) => total + category.services.length,
+    0,
+  );
 
   const visibleCategories = categoryTabs
     .filter((category) => activeCategoryId === "all" || category.id === activeCategoryId)
@@ -965,6 +969,9 @@ export function ServiceSelector({
           type="button"
         >
           <span>All</span>
+          <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[9px]">
+            {totalServiceCount}
+          </span>
         </button>
         {bundles.length > 0 ? (
           <button
@@ -980,19 +987,26 @@ export function ServiceSelector({
           >
             <Sparkles className="size-3.5" aria-hidden="true" />
             <span>Packages</span>
-            <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[9px]">
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                activeCategoryId === "packages"
+                  ? "bg-white/15 text-white"
+                  : "bg-[#eee3dd] text-[#755f56]"
+              }`}
+            >
               {bundles.length}
             </span>
           </button>
         ) : null}
         {categoryTabs.map((category) => {
           const CategoryIcon = getCategoryIcon(category.name);
+          const isSelected = activeCategoryId === category.id;
 
           return (
             <button
-              aria-selected={activeCategoryId === category.id}
+              aria-selected={isSelected}
               className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
-                activeCategoryId === category.id
+                isSelected
                   ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
                   : "border-[#d5c1b8] bg-transparent text-[#655852] hover:border-[#79594f]"
               }`}
@@ -1003,6 +1017,15 @@ export function ServiceSelector({
             >
               <CategoryIcon className="size-3.5" aria-hidden="true" />
               <span>{category.name}</span>
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                  isSelected
+                    ? "bg-white/15 text-white"
+                    : "bg-[#eee3dd] text-[#755f56]"
+                }`}
+              >
+                {category.services.length}
+              </span>
             </button>
           );
         })}
@@ -1126,7 +1149,7 @@ export function ServiceSelector({
                         {category.name}
                       </h3>
                       <span className="rounded-full border border-[#e0d1c8] bg-[#fffdfb] px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8d7970]">
-                        {nestedGroup ? activeNestedServices.length : category.services.length} service{(nestedGroup ? activeNestedServices.length : category.services.length) === 1 ? "" : "s"}
+                        {category.services.length} service{category.services.length === 1 ? "" : "s"}
                       </span>
                     </div>
                     <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[#d5c1b8] bg-white text-[#5f4037]">
@@ -1149,7 +1172,7 @@ export function ServiceSelector({
 
                         return (
                           <button
-                            className={`inline-flex h-10 items-center rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
+                            className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
                               isActive
                                 ? "border-[#352d2a] bg-[#352d2a] text-white shadow-sm"
                                 : "border-[#d5c1b8] bg-white text-[#5f4037] hover:border-[#79594f]"
@@ -1165,6 +1188,15 @@ export function ServiceSelector({
                             type="button"
                           >
                             {subcategory.name}
+                            <span
+                              className={`rounded-full px-1.5 py-0.5 text-[9px] ${
+                                isActive
+                                  ? "bg-white/15 text-white"
+                                  : "bg-[#eee3dd] text-[#755f56]"
+                              }`}
+                            >
+                              {subcategory.services.length}
+                            </span>
                           </button>
                         );
                       })}
