@@ -163,7 +163,11 @@ function getCapacityBounds(service: LatePointService | null) {
 export function ServiceSelector({
   bundles,
   categories,
-}: ServiceCatalog & { bundles: LatePointBundle[] }) {
+  initialCategory,
+}: ServiceCatalog & {
+  bundles: LatePointBundle[];
+  initialCategory?: "packages";
+}) {
   const serializedDraft = useSyncExternalStore(
     subscribeToBookingDraft,
     getBookingDraftSnapshot,
@@ -239,7 +243,7 @@ export function ServiceSelector({
   const storedBundleId = Number(storedDraft.selectedBundleId ?? 0);
   const [activeCategoryOverride, setActiveCategoryOverride] = useState<
     number | "all" | "packages" | null
-  >(null);
+  >(initialCategory ?? null);
   const activeCategoryId =
     activeCategoryOverride ??
     (bundles.some((bundle) => bundle.id === storedBundleId) ? "packages" : "all");

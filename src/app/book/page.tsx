@@ -11,7 +11,18 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function BookPage() {
+type BookPageProps = {
+  searchParams: Promise<{
+    category?: string | string[];
+  }>;
+};
+
+export default async function BookPage({ searchParams }: BookPageProps) {
+  const params = await searchParams;
+  const requestedCategory = Array.isArray(params.category)
+    ? params.category[0]
+    : params.category;
+  const initialCategory = requestedCategory === "packages" ? "packages" : undefined;
   const [catalog, bundleCatalog] = await Promise.all([
     getServiceCatalog().catch(() => null),
     getBundleCatalog().catch(() => null),
@@ -54,8 +65,10 @@ export default async function BookPage() {
 
         {catalog ? (
           <ServiceSelector
+            key={initialCategory ?? "default"}
             {...catalog}
             bundles={bundleCatalog?.bundles ?? []}
+            initialCategory={initialCategory}
           />
         ) : (
           <section className="booking-radius border border-[#d9c9bf] bg-[#faf6f3] py-16 text-center shadow-[0_18px_40px_rgba(90,72,64,0.04)]">

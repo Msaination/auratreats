@@ -193,7 +193,7 @@ export function GiftVoucherBlock({ content }: HomePageProps) {
       description: "Discover exclusive monthly experiences and limited-time wellness offers designed around the seasons.",
       items: content.offers.items,
       label: "View current offers",
-      href: "/book",
+      href: "/book?category=packages",
     },
     {
       theme: "corporate",
