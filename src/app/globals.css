@@ -345,7 +345,7 @@ body.menu-open { overflow: hidden; }
 .offer::before { right: -4rem; bottom: -7rem; width: 18rem; height: 28rem; border: 1px solid currentColor; opacity: 0.18; transform: rotate(28deg); }
 .offer::after { right: 2.5rem; bottom: 2.5rem; width: 5rem; height: 1px; background: currentColor; opacity: 0.28; }
 .offer--gift { color: var(--ink); background: var(--rose); }
-.offer--seasonal { color: var(--paper); background: var(--sage); }
+.offer--seasonal { color: #f7f3f0; background: #2a241f; }
 .offer--corporate { color: var(--ink); background: var(--greige); }
 .offer-topline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: auto; padding-bottom: 3rem; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
 .offer-index { font-family: var(--serif); font-size: 1.4rem; }
@@ -420,7 +420,7 @@ body.menu-open { overflow: hidden; }
   .offer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
   .offer--gift, .offer--seasonal { min-height: 40rem; }
   .offer--seasonal { transform: translateY(3.5rem); }
-  .offer--corporate { grid-column: 1 / -1; min-height: 27rem; margin-top: 3.5rem; }
+  .offer--corporate { min-height: 40rem; }
   .offer--corporate h3 { max-width: none; }
   .events-layout { grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1.2fr); gap: clamp(3rem, 10vw, 9rem); }
   .footer-inner { grid-template-columns: auto 1fr auto; align-items: center; }
@@ -1215,7 +1215,7 @@ body.menu-open { overflow: hidden; }
   }
 
   .spa-offering-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .spa-experience-copy {
