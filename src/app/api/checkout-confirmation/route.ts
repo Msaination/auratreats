@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const apiBaseUrl =
   process.env.AURA_API_URL ??
-  "http://localhost:8888/AuraDev/backend/wp-json/aura/v1";
+  "https://spa.auraretreat.co.za/wp-json/aura/v1";
 
 export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token") ?? "";
