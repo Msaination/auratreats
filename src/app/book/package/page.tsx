@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { BookingHeader } from "../booking-header";
 import { BookingProgress } from "../progress";
 import { PackageCheckout } from "./package-checkout";
-import { getBundleCatalog, getPaymentMethods } from "@/lib/latepoint";
+import { getPackageCatalog, getPaymentMethods } from "@/lib/latepoint";
 
 export const metadata: Metadata = {
   title: "Purchase a Package | Aura Spa",
@@ -14,27 +14,27 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 type PackagePageProps = {
-  searchParams: Promise<{ bundleId?: string | string[] }>;
+  searchParams: Promise<{ packageId?: string | string[] }>;
 };
 
 export default async function PackagePage({ searchParams }: PackagePageProps) {
   const params = await searchParams;
-  const bundleIdValue = Array.isArray(params.bundleId)
-    ? params.bundleId[0]
-    : params.bundleId;
-  const bundleId = Number(bundleIdValue);
+  const packageIdValue = Array.isArray(params.packageId)
+    ? params.packageId[0]
+    : params.packageId;
+  const packageId = Number(packageIdValue);
 
-  if (!Number.isInteger(bundleId) || bundleId <= 0) {
+  if (!Number.isInteger(packageId) || packageId <= 0) {
     redirect("/book");
   }
 
-  const [bundleCatalog, paymentMethods] = await Promise.all([
-    getBundleCatalog().catch(() => null),
-    getPaymentMethods("bundle").catch(() => []),
+  const [packageCatalog, paymentMethods] = await Promise.all([
+    getPackageCatalog().catch(() => null),
+    getPaymentMethods("package").catch(() => []),
   ]);
-  const bundle = bundleCatalog?.bundles.find((candidate) => candidate.id === bundleId);
+  const pkg = packageCatalog?.packages.find((candidate) => candidate.id === packageId);
 
-  if (!bundleCatalog || !bundle) {
+  if (!packageCatalog || !pkg) {
     notFound();
   }
 
@@ -64,7 +64,7 @@ export default async function PackagePage({ searchParams }: PackagePageProps) {
         </div>
 
         {paymentMethods.length ? (
-          <PackageCheckout bundle={bundle} paymentMethods={paymentMethods} />
+          <PackageCheckout pkg={pkg} paymentMethods={paymentMethods} />
         ) : (
           <section className="border-y border-[#cbbdb6] py-14 text-center">
             <h2 className="font-serif text-3xl">Online payment is unavailable</h2>

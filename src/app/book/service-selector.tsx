@@ -28,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import type {
-  LatePointBundle,
+  LatePointPackage,
   LatePointService,
   ServiceCatalog,
   ServiceDuration,
@@ -161,11 +161,11 @@ function getCapacityBounds(service: LatePointService | null) {
 }
 
 export function ServiceSelector({
-  bundles,
+  packages,
   categories,
   initialCategory,
 }: ServiceCatalog & {
-  bundles: LatePointBundle[];
+  packages: LatePointPackage[];
   initialCategory?: "packages";
 }) {
   const serializedDraft = useSyncExternalStore(
@@ -240,13 +240,13 @@ export function ServiceSelector({
     nestedCategoryGroups.flatMap((group) => group.subcategories.map((subcategory) => subcategory.id)),
   );
   const restoredSelectedServices = restoreSelectedServices(storedDraft, categories);
-  const storedBundleId = Number(storedDraft.selectedBundleId ?? 0);
+  const storedPackageId = Number(storedDraft.selectedPackageId ?? 0);
   const [activeCategoryOverride, setActiveCategoryOverride] = useState<
     number | "all" | "packages" | null
   >(initialCategory ?? null);
   const activeCategoryId =
     activeCategoryOverride ??
-    (bundles.some((bundle) => bundle.id === storedBundleId) ? "packages" : "all");
+    (packages.some((pkg) => pkg.id === storedPackageId) ? "packages" : "all");
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<Record<number, boolean>>(
     () =>
       Object.fromEntries(
@@ -254,15 +254,15 @@ export function ServiceSelector({
       ) as Record<number, boolean>,
   );
   const [query, setQuery] = useState("");
-  const [selectedBundleIdOverride, setSelectedBundleIdOverride] = useState<
+  const [selectedPackageIdOverride, setSelectedPackageIdOverride] = useState<
     number | null | undefined
   >(undefined);
-  const selectedBundleId =
-    selectedBundleIdOverride === undefined
-      ? bundles.some((bundle) => bundle.id === storedBundleId)
-        ? storedBundleId
+  const selectedPackageId =
+    selectedPackageIdOverride === undefined
+      ? packages.some((pkg) => pkg.id === storedPackageId)
+        ? storedPackageId
         : null
-      : selectedBundleIdOverride;
+      : selectedPackageIdOverride;
   const draftAddonServices = Array.isArray(storedDraft.addonServices)
     ? (storedDraft.addonServices as Array<Record<string, unknown>>)
     : [];
@@ -314,10 +314,10 @@ export function ServiceSelector({
     0,
   );
   const primaryServiceTotal = selectedServicePrice * effectiveTotalAttendees;
-  const bundleDurationMinutes =
+  const packageDurationMinutes =
     selectedServices.reduce((sum, entry) => sum + entry.duration.durationMinutes, 0) +
     selectedExtraDurationMinutes;
-  const bundlePrice = primaryServiceTotal + selectedExtraPrice;
+  const packagePrice = primaryServiceTotal + selectedExtraPrice;
 
   const categoryById = new Map(categories.map((category) => [category.id, category]));
   const nestedGroupByParentId = new Map(
@@ -381,15 +381,15 @@ export function ServiceSelector({
       }),
     }))
     .filter((category) => category.services.length > 0);
-  const visibleBundles = bundles.filter((bundle) => {
+  const visiblePackages = packages.filter((pkg) => {
     if (!deferredQuery) {
       return true;
     }
 
-    const includedServiceNames = bundle.includedServices
+    const includedServiceNames = pkg.includedServices
       .map((service) => service.name)
       .join(" ");
-    return `${bundle.name} ${bundle.shortDescription} ${includedServiceNames}`
+    return `${pkg.name} ${pkg.shortDescription} ${includedServiceNames}`
       .toLocaleLowerCase()
       .includes(deferredQuery);
   });
@@ -449,8 +449,8 @@ export function ServiceSelector({
   }, 0);
 
   function selectService(service: LatePointService) {
-    if (selectedBundleId !== null) {
-      setSelectedBundleIdOverride(null);
+    if (selectedPackageId !== null) {
+      setSelectedPackageIdOverride(null);
     }
 
     const duration = service.durations[0] ?? {
@@ -482,8 +482,8 @@ export function ServiceSelector({
   }
 
   function chooseServiceDuration(service: LatePointService, duration: ServiceDuration) {
-    if (selectedBundleId !== null) {
-      setSelectedBundleIdOverride(null);
+    if (selectedPackageId !== null) {
+      setSelectedPackageIdOverride(null);
     }
 
     const isAlreadySelected = selectedServices.some(
@@ -632,15 +632,15 @@ export function ServiceSelector({
         type: "extra",
       }));
     const addonTotal = addonEntries.reduce((sum, item) => sum + Number(item.price ?? 0), 0);
-    const totalBundlePrice = attendeeAdjustedServicePrice + addonTotal;
+    const totalPackagePrice = attendeeAdjustedServicePrice + addonTotal;
 
     const draft = readBookingDraft();
     sessionStorage.setItem(
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
-        selectedBundleId: null,
-        selectedBundleName: "",
+        selectedPackageId: null,
+        selectedPackageName: "",
         selectedServices: selectedEntries,
         primaryServiceId: primarySelection.serviceId,
         primaryServiceName: primarySelection.serviceName,
@@ -651,15 +651,15 @@ export function ServiceSelector({
         primaryPrice: attendeeAdjustedServicePrice,
         addonTotal,
         addonServices: addonEntries,
-        totalDurationMinutes: bundleDurationMinutes,
-        totalPrice: totalBundlePrice,
+        totalDurationMinutes: packageDurationMinutes,
+        totalPrice: totalPackagePrice,
         totalAttendees: nextTotalAttendees,
         selectedTotalAttendees: nextTotalAttendees,
         serviceId: primarySelection.serviceId,
         serviceName: primarySelection.serviceName,
         durationId: primarySelection.durationId,
         durationMinutes: primarySelection.durationMinutes,
-        price: totalBundlePrice,
+        price: totalPackagePrice,
       }),
     );
     startTransition(() => {
@@ -667,9 +667,9 @@ export function ServiceSelector({
     });
   }
 
-  function selectBundle(bundle: LatePointBundle) {
-    const isSelected = selectedBundleId === bundle.id;
-    setSelectedBundleIdOverride(isSelected ? null : bundle.id);
+  function selectPackage(pkg: LatePointPackage) {
+    const isSelected = selectedPackageId === pkg.id;
+    setSelectedPackageIdOverride(isSelected ? null : pkg.id);
 
     if (!isSelected) {
       return;
@@ -680,8 +680,8 @@ export function ServiceSelector({
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
-        selectedBundleId: null,
-        selectedBundleName: "",
+        selectedPackageId: null,
+        selectedPackageName: "",
         packagePrice: 0,
       }),
     );
@@ -690,9 +690,9 @@ export function ServiceSelector({
     setSelectedExtraIdsOverride([]);
   }
 
-  function saveBundleSelection() {
-    const selectedBundle = bundles.find((bundle) => bundle.id === selectedBundleId);
-    if (!selectedBundle) {
+  function savePackageSelection() {
+    const selectedPackage = packages.find((pkg) => pkg.id === selectedPackageId);
+    if (!selectedPackage) {
       return;
     }
 
@@ -703,13 +703,13 @@ export function ServiceSelector({
         ...draft,
         selectedServices: [],
         addonServices: [],
-        selectedBundleId: selectedBundle.id,
-        selectedBundleName: selectedBundle.name,
-        packagePrice: selectedBundle.price.amount,
+        selectedPackageId: selectedPackage.id,
+        selectedPackageName: selectedPackage.name,
+        packagePrice: selectedPackage.price.amount,
       }),
     );
     startTransition(() => {
-      router.push(`/book/package?bundleId=${selectedBundle.id}`);
+      router.push(`/book/package?packageId=${selectedPackage.id}`);
     });
   }
 
@@ -943,13 +943,13 @@ export function ServiceSelector({
             </div>
 
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#d8b7ab] bg-[#fffdfb]/90 px-2.5 py-1.5 text-[11px] font-medium text-[#4f413d]">
-              <span>{bundleDurationMinutes} min</span>
+              <span>{packageDurationMinutes} min</span>
               <span className="h-1 w-1 rounded-full bg-[#b28d7d]" aria-hidden="true" />
               <span>
                 {new Intl.NumberFormat("en-ZA", {
                   style: "currency",
                   currency: "ZAR",
-                }).format(bundlePrice)}
+                }).format(packagePrice)}
               </span>
             </div>
           </div>
@@ -977,7 +977,7 @@ export function ServiceSelector({
             {totalServiceCount}
           </span>
         </button>
-        {bundles.length > 0 ? (
+        {packages.length > 0 ? (
           <button
             aria-selected={activeCategoryId === "packages"}
             className={`inline-flex h-10 items-center gap-2 rounded-full border px-3 text-[10px] font-black tracking-[0.02em] transition ${
@@ -998,7 +998,7 @@ export function ServiceSelector({
                   : "bg-[#eee3dd] text-[#755f56]"
               }`}
             >
-              {bundles.length}
+              {packages.length}
             </span>
           </button>
         ) : null}
@@ -1038,16 +1038,16 @@ export function ServiceSelector({
       <div className="min-w-0 w-full">
         <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#786b65]" aria-live="polite">
           {activeCategoryId === "packages"
-            ? `${visibleBundles.length} ${visibleBundles.length === 1 ? "package" : "packages"}`
+            ? `${visiblePackages.length} ${visiblePackages.length === 1 ? "package" : "packages"}`
             : `${visibleTotal} ${visibleTotal === 1 ? "treatment" : "treatments"}`}
         </p>
 
         {activeCategoryId === "packages" ? (
-          visibleBundles.length ? (
+          visiblePackages.length ? (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleBundles.map((bundle) => {
-                const isSelected = selectedBundleId === bundle.id;
-                const includedCount = bundle.includedServices.reduce(
+              {visiblePackages.map((pkg) => {
+                const isSelected = selectedPackageId === pkg.id;
+                const includedCount = pkg.includedServices.reduce(
                   (count, service) => count + service.quantity,
                   0,
                 );
@@ -1060,8 +1060,8 @@ export function ServiceSelector({
                         ? "border-[#5f4037] bg-[linear-gradient(135deg,#f7ece7_0%,#f2e3df_100%)] shadow-[0_16px_35px_rgba(88,68,59,0.08)]"
                         : "border-[#e7ddd7] bg-[linear-gradient(180deg,#ffffff_0%,#fdf9f7_100%)] hover:border-[#c9a99a] hover:shadow-[0_10px_25px_rgba(88,68,59,0.04)]"
                     }`}
-                    key={bundle.id}
-                    onClick={() => selectBundle(bundle)}
+                    key={pkg.id}
+                    onClick={() => selectPackage(pkg)}
                     type="button"
                   >
                     <span className="flex items-start justify-between gap-3">
@@ -1070,7 +1070,7 @@ export function ServiceSelector({
                           {isSelected ? "Selected package" : "Aura package"}
                         </span>
                         <span className="block font-serif text-2xl text-[#352d2a]">
-                          {bundle.name}
+                          {pkg.name}
                         </span>
                       </span>
                       {isSelected ? (
@@ -1078,21 +1078,21 @@ export function ServiceSelector({
                       ) : null}
                     </span>
 
-                    {bundle.shortDescription ? (
+                    {pkg.shortDescription ? (
                       <span className="booking-radius mt-3 block border border-[#e2cfc6] bg-[#f8eee9] px-3 py-2.5 text-sm leading-6 text-[#746760]">
-                        {bundle.shortDescription}
+                        {pkg.shortDescription}
                       </span>
                     ) : null}
 
                     <span className="mt-4 flex items-center justify-between gap-3 border-t border-[#eaded8] pt-3 text-sm text-[#746760]">
                       <span>{includedCount} included session{includedCount === 1 ? "" : "s"}</span>
                       <span className="font-semibold text-[#5f4037]">
-                        {bundle.price.formatted}
+                        {pkg.price.formatted}
                       </span>
                     </span>
 
                     <span className="mt-3 block space-y-1.5 border-t border-[#eaded8] pt-3">
-                      {bundle.includedServices.map((service) => (
+                      {pkg.includedServices.map((service) => (
                         <span
                           className="flex items-center justify-between gap-3 text-xs text-[#655852]"
                           key={service.id}
@@ -1358,10 +1358,10 @@ export function ServiceSelector({
           disabled={
             isPending ||
             (activeCategoryId === "packages"
-              ? selectedBundleId === null
+              ? selectedPackageId === null
               : !selectedServices.length)
           }
-          onClick={activeCategoryId === "packages" ? saveBundleSelection : saveSelection}
+          onClick={activeCategoryId === "packages" ? savePackageSelection : saveSelection}
           type="button"
         >
           {isPending

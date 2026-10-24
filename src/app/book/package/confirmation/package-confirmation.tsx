@@ -57,8 +57,8 @@ function clearSelectedPackageFromDraft() {
       "aura-booking-draft",
       JSON.stringify({
         ...draft,
-        selectedBundleId: null,
-        selectedBundleName: "",
+        selectedPackageId: null,
+        selectedPackageName: "",
         packagePrice: 0,
       }),
     );

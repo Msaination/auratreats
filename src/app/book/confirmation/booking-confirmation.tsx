@@ -521,7 +521,7 @@ export function BookingConfirmation({ checkoutToken }: { checkoutToken?: string 
             ) : null}
             <div className="booking-radius mt-4 border border-[#d9cec8] bg-white/70 p-3 text-left">
               <div className="flex items-center justify-between text-sm text-[#746760]">
-                <span>Bundle total</span>
+                <span>Package total</span>
                 <span>{totalDurationMinutes} min</span>
               </div>
               <div className="mt-2 flex items-center justify-between font-serif text-xl text-[#352d2a]">

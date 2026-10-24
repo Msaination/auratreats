@@ -445,7 +445,7 @@ export function DetailsForm({
 
           <div className="booking-radius border border-[#d9cec8] bg-white/60 p-3">
             <div className="flex items-center justify-between text-sm text-[#746760]">
-              <span>Bundle total</span>
+              <span>Package total</span>
               <span>{totalDurationMinutes} min</span>
             </div>
             <div className="mt-2 flex items-center justify-between font-serif text-xl text-[#352d2a]">

@@ -3,7 +3,7 @@
 import { ArrowLeft, ArrowRight, CreditCard, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
-import type { LatePointBundle, PaymentMethod } from "@/lib/latepoint";
+import type { LatePointPackage, PaymentMethod } from "@/lib/latepoint";
 
 type PackageCustomer = {
   first_name: string;
@@ -25,16 +25,16 @@ function getSelectedPaymentMethod(
 }
 
 export function PackageCheckout({
-  bundle,
+  pkg,
   paymentMethods,
 }: {
-  bundle: LatePointBundle;
+  pkg: LatePointPackage;
   paymentMethods: PaymentMethod[];
 }) {
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const includedSessionCount = bundle.includedServices.reduce(
+  const includedSessionCount = pkg.includedServices.reduce(
     (total, service) => total + service.quantity,
     0,
   );
@@ -74,7 +74,7 @@ export function PackageCheckout({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bundles: [{ bundleId: bundle.id }],
+          bundles: [{ packageId: pkg.id }],
           customer,
           paymentMethod: selectedPaymentMethod.id,
           idempotencyKey: crypto.randomUUID(),
@@ -198,14 +198,14 @@ export function PackageCheckout({
 
       <aside className="border border-[#cbbdb6] bg-[#f8f4f1] p-5 lg:sticky lg:top-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a756c]">Package summary</p>
-        <h2 className="mt-4 font-serif text-2xl text-[#352d2a]">{bundle.name}</h2>
-        {bundle.shortDescription ? (
+        <h2 className="mt-4 font-serif text-2xl text-[#352d2a]">{pkg.name}</h2>
+        {pkg.shortDescription ? (
           <p className="booking-radius mt-3 border border-[#e2cfc6] bg-[#f8eee9] px-3 py-2.5 text-sm leading-6 text-[#746760]">
-            {bundle.shortDescription}
+            {pkg.shortDescription}
           </p>
         ) : null}
         <div className="mt-5 space-y-3 border-y border-[#d9cec8] py-4">
-          {bundle.includedServices.map((service) => (
+          {pkg.includedServices.map((service) => (
             <div className="flex items-start justify-between gap-3 text-sm" key={service.id}>
               <span className="font-medium text-[#493d38]">{service.name}</span>
               <span className="shrink-0 text-right text-[#746760]">
@@ -221,7 +221,7 @@ export function PackageCheckout({
         </div>
         <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-[#d9cec8] pt-4">
           <span className="text-sm font-semibold text-[#493d38]">Total</span>
-          <span className="font-serif text-2xl text-[#352d2a]">{bundle.price.formatted}</span>
+          <span className="font-serif text-2xl text-[#352d2a]">{pkg.price.formatted}</span>
         </div>
       </aside>
     </div>

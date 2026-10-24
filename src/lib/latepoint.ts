@@ -55,7 +55,7 @@ export type ServiceCatalog = {
   total: number;
 };
 
-export type LatePointBundle = {
+export type LatePointPackage = {
   id: number;
   name: string;
   shortDescription: string;
@@ -71,8 +71,8 @@ export type LatePointBundle = {
   }>;
 };
 
-export type BundleCatalog = {
-  bundles: LatePointBundle[];
+export type PackageCatalog = {
+  packages: LatePointPackage[];
   total: number;
 };
 
@@ -156,8 +156,8 @@ export type ReviewCatalog = {
   paymentMethods: PaymentMethod[];
 };
 
-export async function getBundleCatalog(): Promise<BundleCatalog> {
-  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/bundles`, {
+export async function getPackageCatalog(): Promise<PackageCatalog> {
+  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/packages`, {
     cache: "no-store",
     headers: {
       Accept: "application/json",
@@ -165,20 +165,20 @@ export async function getBundleCatalog(): Promise<BundleCatalog> {
   });
 
   if (!response.ok) {
-    throw new Error(`Aura bundles request failed: ${response.status}`);
+    throw new Error(`Aura packages request failed: ${response.status}`);
   }
 
-  const catalog = (await response.json()) as Partial<BundleCatalog>;
+  const catalog = (await response.json()) as Partial<PackageCatalog>;
 
-  if (!Array.isArray(catalog.bundles) || typeof catalog.total !== "number") {
-    throw new Error("Aura bundles returned an invalid response.");
+  if (!Array.isArray(catalog.packages) || typeof catalog.total !== "number") {
+    throw new Error("Aura packages returned an invalid response.");
   }
 
-  return catalog as BundleCatalog;
+  return catalog as PackageCatalog;
 }
 
 export async function getPaymentMethods(
-  type: "appointment" | "bundle" = "appointment",
+  type: "appointment" | "package" = "appointment",
 ): Promise<PaymentMethod[]> {
   const params = new URLSearchParams({ type });
   const response = await fetch(

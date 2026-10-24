@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { BookingHeader } from "./booking-header";
 import { BookingProgress } from "./progress";
 import { ServiceSelector } from "./service-selector";
-import { getBundleCatalog, getServiceCatalog } from "@/lib/latepoint";
+import { getPackageCatalog, getServiceCatalog } from "@/lib/latepoint";
 
 export const metadata: Metadata = {
   title: "Choose a Treatment | Aura Spa",
@@ -23,9 +23,9 @@ export default async function BookPage({ searchParams }: BookPageProps) {
     ? params.category[0]
     : params.category;
   const initialCategory = requestedCategory === "packages" ? "packages" : undefined;
-  const [catalog, bundleCatalog] = await Promise.all([
+  const [catalog, packageCatalog] = await Promise.all([
     getServiceCatalog().catch(() => null),
-    getBundleCatalog().catch(() => null),
+    getPackageCatalog().catch(() => null),
   ]);
 
   return (
@@ -67,7 +67,7 @@ export default async function BookPage({ searchParams }: BookPageProps) {
           <ServiceSelector
             key={initialCategory ?? "default"}
             {...catalog}
-            bundles={bundleCatalog?.bundles ?? []}
+            packages={packageCatalog?.packages ?? []}
             initialCategory={initialCategory}
           />
         ) : (
