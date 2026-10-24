@@ -190,7 +190,7 @@ export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string 
 
       <div className="space-y-6 px-6 py-8 sm:px-10 sm:py-10">
         <p className="text-sm leading-6 text-[#746760]">
-          Your package is attached to your LatePoint order. Choose dates for the included treatments separately through Aura Spa.
+          Your package sessions are attached to your LatePoint order. Select "Schedule sessions" to book a treatment, then choose dates and agents on the booking page.
         </p>
 
         {confirmation.packages.map((bundle) => (
@@ -215,10 +215,22 @@ export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string 
           <span className="font-serif text-2xl text-[#352d2a]">{confirmation.total}</span>
         </div>
 
-        <Link className="inline-flex h-11 items-center gap-2 bg-[#352d2a] px-5 text-sm font-semibold text-white transition hover:bg-[#5f4037]" href="/">
-          <Home aria-hidden="true" className="size-4" />
-          Return to Aura home
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 bg-[#352d2a] px-5 text-sm font-semibold text-white transition hover:bg-[#5f4037]"
+            href="/book"
+          >
+            <Home aria-hidden="true" className="size-4" />
+            Schedule sessions
+          </Link>
+          <Link
+            className="inline-flex h-11 items-center justify-center gap-2 border border-[#6f5047] px-5 text-sm font-semibold text-[#6f5047] transition hover:bg-[#f3eee9]"
+            href="/"
+          >
+            <Home aria-hidden="true" className="size-4" />
+            Return to Aura home
+          </Link>
+        </div>
       </div>
     </section>
   );

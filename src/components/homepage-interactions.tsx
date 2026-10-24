@@ -19,12 +19,11 @@ const experienceSlides = [
 
 export function MobileNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 720px)").matches,
-  );
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 720px)");
+    setIsDesktop(desktopQuery.matches);
     const updateMenuState = () => {
       document.body.classList.toggle("menu-open", isOpen && !desktopQuery.matches);
     };

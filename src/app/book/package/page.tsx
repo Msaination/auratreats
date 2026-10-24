@@ -46,6 +46,7 @@ export default async function PackagePage({ searchParams }: PackagePageProps) {
           { label: "Services", href: "/book", complete: true },
           { label: "Package", complete: true },
           { label: "Checkout", current: true },
+          { label: "Confirmation", href: "/book/package/confirmation" },
         ]}
       />
 
