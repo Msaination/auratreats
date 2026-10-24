@@ -63,6 +63,10 @@ export type LatePointPackage = {
     amount: number;
     formatted: string;
   };
+  deposit: {
+    amount: number;
+    formatted: string;
+  };
   includedServices: Array<{
     id: number;
     name: string;
@@ -150,6 +154,10 @@ export type ReviewCatalog = {
     duration: number;
   };
   total: {
+    amount: number;
+    formatted: string;
+  };
+  deposit: {
     amount: number;
     formatted: string;
   };

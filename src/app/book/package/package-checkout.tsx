@@ -32,12 +32,15 @@ export function PackageCheckout({
   paymentMethods: PaymentMethod[];
 }) {
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
+  const [paymentPortion, setPaymentPortion] = useState<"full" | "deposit">("full");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const includedSessionCount = pkg.includedServices.reduce(
     (total, service) => total + service.quantity,
     0,
   );
+  const chargeAmount = paymentPortion === "deposit" ? pkg.deposit.amount : pkg.price.amount;
+  const chargeFormatted = paymentPortion === "deposit" ? pkg.deposit.formatted : pkg.price.formatted;
 
   async function purchasePackage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,6 +80,7 @@ export function PackageCheckout({
           bundles: [{ packageId: pkg.id }],
           customer,
           paymentMethod: selectedPaymentMethod.id,
+          paymentPortion,
           idempotencyKey: crypto.randomUUID(),
           returnUrl: `${window.location.origin}/book/package/confirmation`,
           company: "",
@@ -145,6 +149,44 @@ export function PackageCheckout({
           </div>
         </section>
 
+        <section aria-labelledby="package-payment-option-heading">
+          <h2 id="package-payment-option-heading" className="mb-5 border-b border-[#cbbdb6] pb-3 font-serif text-2xl">
+            Payment option
+          </h2>
+          <div className="space-y-3">
+            <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentPortion === "full" ? "border-[#6f5047] bg-[#eee2dc]" : "border-[#cbbdb6] bg-white/55 hover:border-[#9a7d72]"}`}>
+              <input
+                checked={paymentPortion === "full"}
+                className="mt-1 accent-[#6f5047]"
+                name="paymentPortion"
+                onChange={() => setPaymentPortion("full")}
+                type="radio"
+                value="full"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-[#352d2a]">Full price</span>
+                <span className="mt-1 block text-sm text-[#746760]">Pay the full amount now</span>
+              </span>
+              <span className="shrink-0 font-serif text-lg text-[#352d2a]">{pkg.price.formatted}</span>
+            </label>
+            <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentPortion === "deposit" ? "border-[#6f5047] bg-[#eee2dc]" : "border-[#cbbdb6] bg-white/55 hover:border-[#9a7d72]"}`}>
+              <input
+                checked={paymentPortion === "deposit"}
+                className="mt-1 accent-[#6f5047]"
+                name="paymentPortion"
+                onChange={() => setPaymentPortion("deposit")}
+                type="radio"
+                value="deposit"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-[#352d2a]">50% deposit</span>
+                <span className="mt-1 block text-sm text-[#746760]">Pay half now, balance later</span>
+              </span>
+              <span className="shrink-0 font-serif text-lg text-[#352d2a]">{pkg.deposit.formatted}</span>
+            </label>
+          </div>
+        </section>
+
         <section aria-labelledby="package-payment-heading">
           <h2 id="package-payment-heading" className="mb-5 border-b border-[#cbbdb6] pb-3 font-serif text-2xl">
             Payment method
@@ -190,7 +232,7 @@ export function PackageCheckout({
             Change package
           </Link>
           <button className="flex h-12 items-center justify-center gap-2 bg-[#352d2a] px-6 font-semibold text-white transition hover:bg-[#5f4037] disabled:cursor-not-allowed disabled:opacity-50" disabled={isSubmitting || paymentMethods.length === 0} type="submit">
-            {isSubmitting ? "Preparing secure checkout..." : "Pay for package"}
+            {isSubmitting ? "Preparing secure checkout..." : `Pay ${chargeFormatted} for package`}
             {!isSubmitting ? <ArrowRight aria-hidden="true" className="size-4" /> : null}
           </button>
         </div>

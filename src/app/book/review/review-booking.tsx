@@ -252,6 +252,7 @@ export function ReviewBooking({
       review.paymentMethods[0]?.id ??
       null,
   );
+  const [paymentPortion, setPaymentPortion] = useState<"full" | "deposit">("full");
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [bookingAvailability, setBookingAvailability] = useState<
@@ -297,6 +298,8 @@ export function ReviewBooking({
     (sum, item) => sum + Number(item.totalPrice ?? 0),
     0,
   );
+  const depositAmount = Number(review.deposit?.amount ?? 0);
+  const chargeAmount = paymentPortion === "deposit" ? depositAmount : totalAmount;
   const primaryDurationLabel = getDurationDisplayLabel(
     draft,
     Number(totalDurationMinutes ?? review.service.duration),
@@ -547,6 +550,7 @@ export function ReviewBooking({
             draft.totalDurationMinutes ?? draft.durationMinutes ?? review.service.duration,
           ),
           paymentMethod,
+          paymentPortion,
           idempotencyKey: crypto.randomUUID(),
           returnUrl: location.href,
           company: "",
@@ -778,6 +782,51 @@ export function ReviewBooking({
           </div>
         </section>
 
+        <section aria-labelledby="payment-option-heading">
+          <div className="border-b border-[#cbbdb6] pb-4">
+            <h2 id="payment-option-heading" className="font-serif text-2xl">Payment option</h2>
+            <p className="mt-2 text-sm text-[#746760]">
+              Choose to pay the full amount or a 50% deposit.
+            </p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentPortion === "full" ? "border-[#6f5047] bg-[#eee2dc]" : "border-[#cbbdb6] bg-white/55 hover:border-[#9a7d72]"}`}>
+              <input
+                checked={paymentPortion === "full"}
+                className="mt-1 accent-[#6f5047]"
+                name="paymentPortion"
+                onChange={() => setPaymentPortion("full")}
+                type="radio"
+                value="full"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-[#352d2a]">Full price</span>
+                <span className="mt-1 block text-sm text-[#746760]">Pay the full amount now</span>
+              </span>
+              <span className="shrink-0 font-serif text-lg text-[#352d2a]">
+                {new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(totalAmount)}
+              </span>
+            </label>
+            <label className={`flex cursor-pointer items-start gap-3 border p-4 transition ${paymentPortion === "deposit" ? "border-[#6f5047] bg-[#eee2dc]" : "border-[#cbbdb6] bg-white/55 hover:border-[#9a7d72]"}`}>
+              <input
+                checked={paymentPortion === "deposit"}
+                className="mt-1 accent-[#6f5047]"
+                name="paymentPortion"
+                onChange={() => setPaymentPortion("deposit")}
+                type="radio"
+                value="deposit"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-[#352d2a]">50% deposit</span>
+                <span className="mt-1 block text-sm text-[#746760]">Pay half now, balance later</span>
+              </span>
+              <span className="shrink-0 font-serif text-lg text-[#352d2a]">
+                {new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(depositAmount)}
+              </span>
+            </label>
+          </div>
+        </section>
+
         <section aria-labelledby="payment-heading">
           <div className="border-b border-[#cbbdb6] pb-4">
             <h2 id="payment-heading" className="font-serif text-2xl">Payment method</h2>
@@ -856,12 +905,14 @@ export function ReviewBooking({
       <aside className="border border-[#cbbdb6] bg-[#f8f4f1] p-5 lg:sticky lg:top-8">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a756c]">Total</p>
         <div className="mt-5 flex items-end justify-between gap-4 border-b border-[#d9cec8] pb-5">
-          <span className="text-sm text-[#746760]">Appointment total</span>
+          <span className="text-sm text-[#746760]">
+            {paymentPortion === "deposit" ? "Deposit amount" : "Appointment total"}
+          </span>
           <strong className="font-serif text-3xl font-normal text-[#352d2a]">
             {new Intl.NumberFormat("en-ZA", {
               style: "currency",
               currency: "ZAR",
-            }).format(totalAmount)}
+            }).format(chargeAmount)}
           </strong>
         </div>
         <p aria-live="polite" className="mt-6 min-h-10 text-center text-xs leading-5 text-[#786b65]">
@@ -934,7 +985,7 @@ export function ReviewBooking({
               : "Preparing checkout..."
             : paymentMethod === "local"
               ? "Confirm booking"
-              : "Proceed to secure checkout"}
+              : `Pay ${new Intl.NumberFormat("en-ZA", { style: "currency", currency: "ZAR" }).format(chargeAmount)}`}
           <ShieldCheck aria-hidden="true" className="size-4" />
         </button>
         <Link

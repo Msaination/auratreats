@@ -15,6 +15,10 @@ type PurchasedPackage = {
   id: number;
   name: string;
   includedServices: IncludedService[];
+  deposit: {
+    amount: number;
+    formatted: string;
+  };
 };
 
 type PackageConfirmationData = {
