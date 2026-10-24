@@ -59,7 +59,7 @@ export default async function PackagePage({ searchParams }: PackagePageProps) {
             Complete your purchase
           </h1>
           <p className="mt-4 text-base leading-7 text-[#746760]">
-            Package sessions are added to your LatePoint order. Choose dates for included treatments separately after purchase.
+            Your sessions are added to your LatePoint order. After purchase, schedule individual dates and times for each included treatment.
           </p>
         </div>
 

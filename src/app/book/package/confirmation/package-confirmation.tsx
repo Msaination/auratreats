@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type IncludedService = {
+  id: number;
   name: string;
   quantity: number;
   durationMinutes: number;
@@ -65,6 +66,18 @@ function clearSelectedPackageFromDraft() {
   } catch {
     // The purchase confirmation must remain visible if draft cleanup is unavailable.
   }
+}
+
+function scheduleServiceSession(serviceId: number) {
+  const draft = {
+    selectedServices: [{ serviceId, extras: [] }],
+  };
+  try {
+    sessionStorage.setItem("aura-booking-draft", JSON.stringify(draft));
+  } catch {
+    // Fallback: proceed without draft preservation.
+  }
+  window.location.href = "/book";
 }
 
 export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string }) {
@@ -190,15 +203,15 @@ export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string 
 
       <div className="space-y-6 px-6 py-8 sm:px-10 sm:py-10">
         <p className="text-sm leading-6 text-[#746760]">
-          Your package sessions are attached to your LatePoint order. Select "Schedule sessions" to book a treatment, then choose dates and agents on the booking page.
+          Your package sessions are attached to your LatePoint order. Each session includes a date and time — select "Schedule" below to book your first appointment, or choose dates and agents on the booking page.
         </p>
 
-        {confirmation.packages.map((bundle) => (
-          <section className="border-y border-[#d9cec8] py-5" key={bundle.id}>
-            <h2 className="font-serif text-2xl text-[#352d2a]">{bundle.name}</h2>
+        {confirmation.packages.map((pkgItem) => (
+          <section className="border-y border-[#d9cec8] py-5" key={pkgItem.id}>
+            <h2 className="font-serif text-2xl text-[#352d2a]">{pkgItem.name}</h2>
             <ul className="mt-4 space-y-3">
-              {bundle.includedServices.map((service, index) => (
-                <li className="flex items-start justify-between gap-4 text-sm" key={`${bundle.id}-${service.name}-${index}`}>
+              {pkgItem.includedServices.map((service) => (
+                <li className="flex items-start justify-between gap-4 text-sm" key={`${pkgItem.id}-${service.id}`}>
                   <span className="font-medium text-[#493d38]">{service.name}</span>
                   <span className="shrink-0 text-right text-[#746760]">
                     {service.quantity > 1 ? `${service.quantity} × ` : ""}
@@ -207,6 +220,19 @@ export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string 
                 </li>
               ))}
             </ul>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              {pkgItem.includedServices.map((service) => (
+                <button
+                  key={service.id}
+                  type="button"
+                  onClick={() => scheduleServiceSession(service.id)}
+                  className="inline-flex h-10 items-center justify-center gap-1.5 bg-[#6f5047] px-4 text-sm font-semibold text-white transition hover:bg-[#5f4037]"
+                >
+                  Schedule {service.name}
+                </button>
+              ))}
+            </div>
           </section>
         ))}
 
