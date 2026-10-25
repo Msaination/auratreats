@@ -5,7 +5,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npx @cloudflare/next-on-pages@1"
-pages_build_output_dir = ".vercel/output/static"
+
+[assets]
+directory = ".vercel/output/static"
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
