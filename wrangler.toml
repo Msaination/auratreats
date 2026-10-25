@@ -1,14 +1,17 @@
 # Cloudflare Pages config for Next.js
+# Requires a Cloudflare PAGES project (not a Workers service).
+# The _worker.js/ directory convention used by next-on-pages is supported
+# only in Pages, not in Workers+Assets.
 name = "auratreats"
-main = "./.vercel/output/static/worker.js"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
-command = "bash scripts/build-and-deploy.sh"
+command = "npx @cloudflare/next-on-pages@1"
+pages_build_output_dir = ".vercel/output/static"
 
-[assets]
-directory = ".vercel/output/static"
+[build.environment]
+NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
