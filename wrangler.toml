@@ -3,8 +3,7 @@ name = "auratreats"
 
 [build]
 command = "npx @cloudflare/next-on-pages@1"
-[build.upload]
-directory = ".vercel/output/static"
+pages_build_output_dir = ".vercel/output/static"
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
