@@ -2,7 +2,7 @@
 name = "auratreats"
 
 [build]
-command = "npx next build && npx @cloudflare/next-on-pages --skip-build"
+command = "npx @cloudflare/next-on-pages@1"
 [build.upload]
 directory = ".vercel/output/static"
 
