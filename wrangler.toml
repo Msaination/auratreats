@@ -1,5 +1,6 @@
 # Cloudflare Pages config for Next.js
 name = "auratreats"
+main = "./.vercel/output/static/worker.js"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
 
