@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const runtime = "edge";
 import { PackageConfirmation } from "./package-confirmation";
 
 export const metadata: Metadata = {

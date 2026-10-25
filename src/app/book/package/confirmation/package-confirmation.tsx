@@ -207,7 +207,7 @@ export function PackageConfirmation({ checkoutToken }: { checkoutToken?: string 
 
       <div className="space-y-6 px-6 py-8 sm:px-10 sm:py-10">
         <p className="text-sm leading-6 text-[#746760]">
-          Your package sessions are attached to your LatePoint order. Each session includes a date and time — select "Schedule" below to book your first appointment, or choose dates and agents on the booking page.
+          Your package sessions are attached to your LatePoint order. Each session includes a date and time — select &ldquo;Schedule&rdquo; below to book your first appointment, or choose dates and agents on the booking page.
         </p>
 
         {confirmation.packages.map((pkgItem) => (

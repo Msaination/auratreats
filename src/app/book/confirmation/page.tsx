@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const runtime = "edge";
 import { BookingConfirmation } from "./booking-confirmation";
 
 export const metadata: Metadata = {

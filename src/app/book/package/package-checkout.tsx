@@ -39,7 +39,6 @@ export function PackageCheckout({
     (total, service) => total + service.quantity,
     0,
   );
-  const chargeAmount = paymentPortion === "deposit" ? pkg.deposit.amount : pkg.price.amount;
   const chargeFormatted = paymentPortion === "deposit" ? pkg.deposit.formatted : pkg.price.formatted;
 
   async function purchasePackage(event: FormEvent<HTMLFormElement>) {

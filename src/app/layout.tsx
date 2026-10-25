@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { DM_Sans, Italiana } from "next/font/google";
 import "./globals.css";
 
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   description: "Escape the demands of everyday life and immerse yourself in a sanctuary where wellness, beauty and relaxation come together.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"

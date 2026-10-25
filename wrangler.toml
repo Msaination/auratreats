@@ -1,0 +1,13 @@
+# Cloudflare Pages config for Next.js
+name = "auratreats"
+
+[build]
+command = "npx next build && npx @cloudflare/next-on-pages --skip-build"
+[build.upload]
+directory = ".vercel/output/static"
+
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
+
+[env.production.vars]
+AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"

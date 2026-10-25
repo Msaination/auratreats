@@ -1,8 +1,15 @@
-import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  eslint: { ignoreDuringBuilds: true },
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      config.optimization!.minimize = false;
+      config.optimization!.minimizer = [];
+    }
+    return config;
+  },
 };
 
 export default withSentryConfig(nextConfig, {

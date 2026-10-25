@@ -596,7 +596,7 @@ function mapTestimonialItems(value: unknown, fallback: TestimonialItem[]): Testi
 export async function loadHomePageContent(): Promise<HomePageContent> {
   try {
     const [wpResult, latePointCatalog] = await Promise.all([
-      wordpressQuery<{ page?: any }>(HOME_PAGE_QUERY).catch(() => ({ page: null })),
+      wordpressQuery<{ page?: Record<string, unknown> }>(HOME_PAGE_QUERY).catch(() => ({ page: null })),
       getServiceCatalog().catch(() => null),
     ]);
     const page = wpResult.page;
@@ -615,19 +615,29 @@ export async function loadHomePageContent(): Promise<HomePageContent> {
       };
     }
 
-    const hero = page.homeHero ?? {};
-    const intro = page.homeIntro ?? {};
-    const features = page.homeFeatures ?? [];
-    const services = page.homeServices ?? [];
-    const treatments = page.popularTreatments ?? page.homeTreatments ?? [];
-    const testimonials = page.homeTestimonials ?? [];
-    const footer = page.homeFooter ?? {};
+  const hero: Record<string, unknown> = (page.homeHero ?? {}) as Record<string, unknown>;
+  const intro: Record<string, unknown> = (page.homeIntro ?? {}) as Record<string, unknown>;
+  const features: unknown[] = Array.isArray(page.homeFeatures) ? page.homeFeatures : [];
+  const featuresMeta: Record<string, unknown> = (page.homeFeatures ?? {}) as Record<string, unknown>;
+  const services: Record<string, unknown>[] = Array.isArray(page.homeServices) ? page.homeServices : [];
+  const servicesMeta = (page.homeServices as Record<string, unknown> | undefined) ?? {};
+  const treatments = page.popularTreatments ?? page.homeTreatments ?? [];
+  const testimonials = page.homeTestimonials ?? [];
+  const footer: Record<string, unknown> = (page.homeFooter ?? {}) as Record<string, unknown>;
+  const cta: Record<string, unknown> = (page.homeCta ?? {}) as Record<string, unknown>;
+  const offers: Record<string, unknown> = (page.seasonalOffers ?? {}) as Record<string, unknown>;
+  const corporate: Record<string, unknown> = (page.corporateWellbeing ?? {}) as Record<string, unknown>;
+  const giftVoucher: Record<string, unknown> = (page.homeGiftVoucher ?? {}) as Record<string, unknown>;
+  const treatmentsMeta: Record<string, unknown> = (page.homeTreatments ?? {}) as Record<string, unknown>;
+  const benefits: Record<string, unknown> = (page.homeBenefits ?? {}) as Record<string, unknown>;
+  const testimonialsMeta: Record<string, unknown> = (page.homeTestimonials ?? {}) as Record<string, unknown>;
+  const header: Record<string, unknown> = (page.homeHeader ?? {}) as Record<string, unknown>;
 
     return {
       header: {
-        nav: mapNavItems(page.homeHeader?.navItems, defaultHomePageContent.header.nav),
-        ctaLabel: readString(page.homeHeader?.ctaLabel, defaultHomePageContent.header.ctaLabel),
-        ctaHref: readString(page.homeHeader?.ctaHref, defaultHomePageContent.header.ctaHref),
+        nav: mapNavItems(header.navItems, defaultHomePageContent.header.nav),
+        ctaLabel: readString(header.ctaLabel, defaultHomePageContent.header.ctaLabel),
+        ctaHref: readString(header.ctaHref, defaultHomePageContent.header.ctaHref),
       },
       hero: {
         eyebrow: readString(hero.eyebrow, defaultHomePageContent.hero.eyebrow),
@@ -657,7 +667,7 @@ export async function loadHomePageContent(): Promise<HomePageContent> {
           hero.tertiaryButtonUrl,
           defaultHomePageContent.hero.tertiaryButtonUrl,
         ),
-        imageUrl: readString(hero.image?.sourceUrl, defaultHomePageContent.hero.imageUrl),
+        imageUrl: readString((hero.image as Record<string, unknown> | undefined)?.sourceUrl, defaultHomePageContent.hero.imageUrl),
         badgeTitle: readString(hero.badgeTitle, defaultHomePageContent.hero.badgeTitle),
         badgeSubtitle: readString(hero.badgeSubtitle, defaultHomePageContent.hero.badgeSubtitle),
       },
@@ -666,72 +676,73 @@ export async function loadHomePageContent(): Promise<HomePageContent> {
         heading: readString(intro.heading, defaultHomePageContent.intro.heading),
         paragraphOne: readString(intro.paragraphOne, defaultHomePageContent.intro.paragraphOne),
         paragraphTwo: readString(intro.paragraphTwo, defaultHomePageContent.intro.paragraphTwo),
-        imageUrl: readString(intro.image?.sourceUrl, defaultHomePageContent.intro.imageUrl),
+        imageUrl: readString((intro.image as Record<string, unknown> | undefined)?.sourceUrl, defaultHomePageContent.intro.imageUrl),
       },
       features: {
-        eyebrow: readString(page.homeFeatures?.eyebrow, defaultHomePageContent.features.eyebrow),
-        heading: readString(page.homeFeatures?.heading, defaultHomePageContent.features.heading),
-        intro: readString(page.homeFeatures?.intro, defaultHomePageContent.features.intro),
+        eyebrow: readString(featuresMeta.eyebrow, defaultHomePageContent.features.eyebrow),
+        heading: readString(featuresMeta.heading, defaultHomePageContent.features.heading),
+        intro: readString(featuresMeta.intro, defaultHomePageContent.features.intro),
         items: mapFeatureItems(features, defaultHomePageContent.features.items),
       },
       services: {
-        eyebrow: readString(page.homeServices?.eyebrow, defaultHomePageContent.services.eyebrow),
-        heading: readString(page.homeServices?.heading, defaultHomePageContent.services.heading),
-        items: (Array.isArray(services) ? services : defaultHomePageContent.services.items)
-          .map((item: any) => ({
+        eyebrow: readString(servicesMeta.eyebrow, defaultHomePageContent.services.eyebrow),
+        heading: readString(servicesMeta.heading, defaultHomePageContent.services.heading),
+        items: services.length > 0
+          ? services.map((item: Record<string, unknown>) => ({
             title: readString(item?.title, "Service"),
             description: readString(item?.description, ""),
             imageUrl: readString(item?.imageUrl, "/images/AuraCerum.jpg"),
             buttonLabel: readString(item?.buttonLabel, "View Services"),
             buttonUrl: readString(item?.buttonUrl, "/book"),
-          })),
+          }))
+          : defaultHomePageContent.services.items,
       },
       treatments: {
-        eyebrow: readString(page.homeTreatments?.eyebrow, defaultHomePageContent.treatments.eyebrow),
-        heading: readString(page.homeTreatments?.heading, defaultHomePageContent.treatments.heading),
+        eyebrow: readString(treatmentsMeta.eyebrow, defaultHomePageContent.treatments.eyebrow),
+        heading: readString(treatmentsMeta.heading, defaultHomePageContent.treatments.heading),
         items: mapTreatmentItems(
           treatments,
           latePointTreatments.length > 0 ? latePointTreatments : defaultHomePageContent.treatments.items,
         ),
       },
       benefits: {
-        eyebrow: readString(page.homeBenefits?.eyebrow, defaultHomePageContent.benefits.eyebrow),
-        heading: readString(page.homeBenefits?.heading, defaultHomePageContent.benefits.heading),
-        items: readArray<string>(page.homeBenefits?.items ?? page.homeBenefits, defaultHomePageContent.benefits.items),
+        eyebrow: readString(benefits.eyebrow, defaultHomePageContent.benefits.eyebrow),
+        heading: readString(benefits.heading, defaultHomePageContent.benefits.heading),
+        items: readArray<string>(benefits.items ?? benefits, defaultHomePageContent.benefits.items),
       },
       giftVoucher: {
-        eyebrow: readString(page.homeGiftVoucher?.eyebrow, defaultHomePageContent.giftVoucher.eyebrow),
-        heading: readString(page.homeGiftVoucher?.heading, defaultHomePageContent.giftVoucher.heading),
-        body: readString(page.homeGiftVoucher?.body, defaultHomePageContent.giftVoucher.body),
-        buttonLabel: readString(page.homeGiftVoucher?.buttonLabel, defaultHomePageContent.giftVoucher.buttonLabel),
-        buttonUrl: readString(page.homeGiftVoucher?.buttonUrl, defaultHomePageContent.giftVoucher.buttonUrl),
+        eyebrow: readString((page.homeGiftVoucher as Record<string, unknown> | undefined)?.eyebrow, defaultHomePageContent.giftVoucher.eyebrow),
+        heading: readString((page.homeGiftVoucher as Record<string, unknown> | undefined)?.heading, defaultHomePageContent.giftVoucher.heading),
+        body: readString((page.homeGiftVoucher as Record<string, unknown> | undefined)?.body, defaultHomePageContent.giftVoucher.body),
+        buttonLabel: readString((page.homeGiftVoucher as Record<string, unknown> | undefined)?.buttonLabel, defaultHomePageContent.giftVoucher.buttonLabel),
+        buttonUrl: readString((page.homeGiftVoucher as Record<string, unknown> | undefined)?.buttonUrl, defaultHomePageContent.giftVoucher.buttonUrl),
         imageUrl: readString(
-          page.homeGiftVoucher?.image?.sourceUrl,
+          (giftVoucher.image as Record<string, unknown> | undefined)?.sourceUrl,
           defaultHomePageContent.giftVoucher.imageUrl,
         ),
       },
       offers: {
-        eyebrow: readString(page.seasonalOffers?.eyebrow, defaultHomePageContent.offers.eyebrow),
-        heading: readString(page.seasonalOffers?.heading, defaultHomePageContent.offers.heading),
-        items: readArray<string>(page.seasonalOffers?.items ?? page.seasonalOffers, defaultHomePageContent.offers.items),
+        eyebrow: readString(offers.eyebrow, defaultHomePageContent.offers.eyebrow),
+        heading: readString(offers.heading, defaultHomePageContent.offers.heading),
+        items: readArray<string>(offers.items ?? offers, defaultHomePageContent.offers.items),
       },
       corporateWellbeing: {
-        eyebrow: readString(page.corporateWellbeing?.eyebrow, defaultHomePageContent.corporateWellbeing.eyebrow),
-        heading: readString(page.corporateWellbeing?.heading, defaultHomePageContent.corporateWellbeing.heading),
-        body: readString(page.corporateWellbeing?.body, defaultHomePageContent.corporateWellbeing.body),
-        items: readArray<string>(page.corporateWellbeing?.items ?? page.corporateWellbeing, defaultHomePageContent.corporateWellbeing.items),
+        eyebrow: readString(corporate.eyebrow, defaultHomePageContent.corporateWellbeing.eyebrow),
+        heading: readString(corporate.heading, defaultHomePageContent.corporateWellbeing.heading),
+        body: readString(corporate.body, defaultHomePageContent.corporateWellbeing.body),
+        items: readArray<string>(corporate.items ?? corporate, defaultHomePageContent.corporateWellbeing.items),
       },
       testimonials: {
-        eyebrow: readString(page.homeTestimonials?.eyebrow, defaultHomePageContent.testimonials.eyebrow),
-        heading: readString(page.homeTestimonials?.heading, defaultHomePageContent.testimonials.heading),
+        eyebrow: readString(testimonialsMeta.eyebrow, defaultHomePageContent.testimonials.eyebrow),
+        heading: readString(testimonialsMeta.heading, defaultHomePageContent.testimonials.heading),
         items: mapTestimonialItems(testimonials, defaultHomePageContent.testimonials.items),
       },
       finalCta: {
-        eyebrow: readString(page.homeCta?.eyebrow, defaultHomePageContent.finalCta.eyebrow),
-        headline: readString(page.homeCta?.headline, defaultHomePageContent.finalCta.headline),
-        body: readString(page.homeCta?.body, defaultHomePageContent.finalCta.body),
-        buttonLabel: readString(page.homeCta?.buttonLabel, defaultHomePageContent.finalCta.buttonLabel),
-        buttonUrl: readString(page.homeCta?.buttonUrl, defaultHomePageContent.finalCta.buttonUrl),
+        eyebrow: readString(cta.eyebrow, defaultHomePageContent.finalCta.eyebrow),
+        headline: readString(cta.headline, defaultHomePageContent.finalCta.headline),
+        body: readString(cta.body, defaultHomePageContent.finalCta.body),
+        buttonLabel: readString(cta.buttonLabel, defaultHomePageContent.finalCta.buttonLabel),
+        buttonUrl: readString(cta.buttonUrl, defaultHomePageContent.finalCta.buttonUrl),
       },
       footer: {
         tagline: readString(footer.tagline, defaultHomePageContent.footer.tagline),

@@ -23,7 +23,6 @@ export function MobileNavigation() {
 
   useEffect(() => {
     const desktopQuery = window.matchMedia("(min-width: 720px)");
-    setIsDesktop(desktopQuery.matches);
     const updateMenuState = () => {
       document.body.classList.toggle("menu-open", isOpen && !desktopQuery.matches);
     };

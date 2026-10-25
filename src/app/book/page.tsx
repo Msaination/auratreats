@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const runtime = "edge";
 import { BookingHeader } from "./booking-header";
 import { BookingProgress } from "./progress";
 import { ServiceSelector } from "./service-selector";
