@@ -1,5 +1,7 @@
 # Cloudflare Pages config for Next.js
 name = "auratreats"
+compatibility_date = "2026-10-25"
+compatibility_flags = ["nodejs_compat"]
 
 [build]
 command = "npx @cloudflare/next-on-pages@1"
