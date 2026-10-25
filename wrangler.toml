@@ -15,6 +15,7 @@ NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o451223486817
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
+AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
 
 [env.production.vars]
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
