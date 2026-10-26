@@ -4,34 +4,24 @@
 #   Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
 #   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats
 #   Root directory: /frontend
-#   (NOT "npx wrangler deploy" — that's for Workers services)
 #
-# The scripts/post-build.js no-op runs without error. wrangler pages deploy
-# natively supports the _worker.js/ directory that next-on-pages generates.
+# Environment variables must be set in the dashboard (Settings → Environment variables):
+#   NEXT_PUBLIC_SENTRY_DSN, AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT, NEXT_PUBLIC_SITE_URL
 #
-# ALSO: Ensure CLOUDFLARE_API_TOKEN has Pages:Edit permission.
-# In the Cloudflare API token editor, under "Account permissions":
-# - Find "Cloudflare Pages and Access" → set to "Edit"
-# (This is the Pages:Edit permission; the UI groups it with Access)
-# Set token as env var in dashboard (Settings → Environment variables).
-# A Pages project named "auratreats" must also exist in the Cloudflare dashboard.
+# Compatibility settings in dashboard:
+#   nodejs_compat flag, compatibility_date = "2026-10-25"
+#
+# NOTE: Pages projects do NOT support [build], [build.environment], or [assets]
+# sections in wrangler.toml. These settings are only for Workers projects.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
-
-[build]
-command = "npx @cloudflare/next-on-pages@1"
 pages_build_output_dir = ".vercel/output/static"
 
-[build.environment]
-NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
-WORDPRESS_GRAPHQL_ENDPOINT = "https://spa.auraretreat.co.za/graphql"
-AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
-
 [vars]
+# These are RUNTIME env vars (available to the Worker at request time).
+# Build-time env vars (NEXT_PUBLIC_SENTRY_DSN, WORDPRESS_GRAPHQL_ENDPOINT,
+# AURA_API_URL) must be set in the Cloudflare dashboard (Settings →
+# Environment variables) since Pages wrangler.toml doesn't support [build.environment].
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
-# NOTE: CLOUDFLARE_API_TOKEN must be set as a secret/environment variable
-# in the Cloudflare dashboard (Settings → Environment variables), NOT here.
-# DO NOT commit API tokens to wrangler.toml or source control.
-
