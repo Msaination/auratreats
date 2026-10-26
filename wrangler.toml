@@ -1,6 +1,7 @@
 # Cloudflare Pages config for Next.js
-# NEXT STEPS: Create a Pages project on the Cloudflare dashboard and deploy.
-# See https://dash.cloudflare.com for project creation.
+# This project MUST be deployed as a PAGES project, NOT a Workers service.
+# next-on-pages generates _worker.js/ with dynamic import() for edge functions,
+# which only works in the Cloudflare Pages runtime.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
@@ -14,7 +15,4 @@ NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o451223486817
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
-AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
-
-[env.production.vars]
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
