@@ -1,7 +1,7 @@
 # Cloudflare Pages config for Next.js
-# Requires a Cloudflare PAGES project (not a Workers service).
-# The _worker.js/ directory convention used by next-on-pages is supported
-# only in Pages, not in Workers+Assets.
+# This project MUST be deployed as a Pages project (not Workers service)
+# because next-on-pages generates _worker.js/ with dynamic import() that
+# only works in the Pages runtime.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
