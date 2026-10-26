@@ -1,7 +1,6 @@
 # Cloudflare Pages config for Next.js
-# This project MUST be deployed as a Pages project (not Workers service)
-# because next-on-pages generates _worker.js/ with dynamic import() that
-# only works in the Pages runtime.
+# NEXT STEPS: Create a Pages project on the Cloudflare dashboard and deploy.
+# See https://dash.cloudflare.com for project creation.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
