@@ -6,10 +6,11 @@
 #   Root directory: /frontend
 #   (NOT "npx wrangler deploy" — that's for Workers services)
 #
-# The scripts/post-build.js is NOT needed — wrangler pages deploy
+# The scripts/post-build.js no-op runs without error. wrangler pages deploy
 # natively supports the _worker.js/ directory that next-on-pages generates.
-# It exists as a no-op placeholder in case the dashboard Build command
-# still references it.
+#
+# ALSO: Ensure CLOUDFLARE_API_TOKEN has Pages:Edit permission.
+# Set as env var in dashboard (Settings → Environment variables), not in wrangler.toml.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
@@ -26,3 +27,7 @@ AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
+# NOTE: CLOUDFLARE_API_TOKEN must be set as a secret/environment variable
+# in the Cloudflare dashboard (Settings → Environment variables), NOT here.
+# DO NOT commit API tokens to wrangler.toml or source control.
+
