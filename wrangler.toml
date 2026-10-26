@@ -1,12 +1,15 @@
 # Cloudflare Pages config for Next.js
 #
 # IMPORTANT: Update Cloudflare dashboard settings:
-#   Build command: npx @cloudflare/next-on-pages@1
-#   Deploy command: npx wrangler pages deploy .vercel/output/static
+#   Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
+#   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats
+#   Root directory: /frontend
 #   (NOT "npx wrangler deploy" — that's for Workers services)
 #
 # The scripts/post-build.js is NOT needed — wrangler pages deploy
 # natively supports the _worker.js/ directory that next-on-pages generates.
+# It exists as a no-op placeholder in case the dashboard Build command
+# still references it.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
