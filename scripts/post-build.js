@@ -32,17 +32,17 @@ console.log("Patching Worker script for Workers + Assets...");
 
 // Patch 1: Replace import(e.entrypoint) with ASSETS.fetch + Blob URL import
 // The entrypoint path is relative (e.g., "__next-on-pages-dist__/functions/index.func.js")
-// We need to load it via ASSETS.fetch(), create a Blob URL, and import that.
+// We load it via ASSETS.fetch(), create a Blob URL, and import that.
 content = content.replace(
   /await import\(e\.entrypoint\)/g,
-  `(await (async()=>{const p=e.entrypoint.startsWith("./")?e.entrypoint:"./ "+e.entrypoint;const r=await t.ASSETS.fetch(new URL(p,"https://worker.local/").href);const s=await r.arrayBuffer();const u=new URL("blob:"+location.origin);const b=new Blob([s],{type:"text/javascript"});const url=URL.createObjectURL(b);try{const m=await import(url);return m.__esModule?m:{default:m};}finally{URL.revokeObjectURL(url);}})())`
+  `(await (async()=>{const p=e.entrypoint.startsWith("./")?e.entrypoint:"./ "+e.entrypoint;const r=await t.ASSETS.fetch(new URL(p,"https://worker.local/").href);if(!r.ok)throw new Error("Failed to load function: "+p+" status="+r.status);const s=await r.arrayBuffer();const b=new Blob([s],{type:"text/javascript"});const url=URL.createObjectURL(b);try{const m=await import(url);return m;}finally{URL.revokeObjectURL(url);}})())`
 );
 
 // Patch 2: Replace import(e) in cache module loader (j function)
 // Path e is like "./__next-on-pages-dist__/cache/kv.js"
 content = content.replace(
   /async function j\(e\)\{return import\(e\)\}/,
-  `async function j(e){const r=await t.ASSETS.fetch(new URL(e,"https://worker.local/").href);const s=await r.arrayBuffer();const b=new Blob([s],{type:"text/javascript"});const url=URL.createObjectURL(b);try{const m=await import(url);return m.__esModule?m:{default:m};}finally{URL.revokeObjectURL(url);}}`
+  `async function j(e){const r=await t.ASSETS.fetch(new URL(e,"https://worker.local/").href);if(!r.ok)throw new Error("Failed to load cache module: "+e+" status="+r.status);const s=await r.arrayBuffer();const b=new Blob([s],{type:"text/javascript"});const url=URL.createObjectURL(b);try{const m=await import(url);return m;}finally{URL.revokeObjectURL(url);}}`
 );
 
 // Write the patched Worker script
