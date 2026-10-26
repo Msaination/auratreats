@@ -1,15 +1,32 @@
-# Cloudflare Pages config for Next.js
-# IMPORTANT: In the Cloudflare dashboard, clear the "Deploy command" field.
-# Pages projects auto-deploy from pages_build_output_dir after build.
-# A custom Deploy command of "npx wrangler deploy" causes deployment to fail
-# because wrangler can't find main/assets configuration in the built output.
+# Cloudflare deployment config for Next.js (Workers + Assets)
+#
+# Works with Cloudflare dashboard settings:
+# - Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
+# - Deploy command: npx wrangler deploy
+# - Root directory: / (or /frontend)
+#
+# The build command generates _worker.js/ (Pages-style output), then
+# post-build.js patches the Worker to use ASSETS.fetch() for dynamic
+# imports (which only work in Pages, not Workers+Assets) and flattens
+# the output into worker.js + __next-on-pages-dist__/ for deployment.
+#
+# wrangler deploy then reads main + [assets] from this wrangler.toml.
 name = "auratreats"
+main = ".vercel/output/static/worker.js"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
-command = "npx @cloudflare/next-on-pages@1"
-pages_build_output_dir = ".vercel/output/static"
+command = "npx @cloudflare/next-on-pages@1 && node scripts/post-build.js"
+
+# Deploy command should remain "npx wrangler deploy" in the Cloudflare dashboard.
+# wrangler deploy reads main + [assets] from this wrangler.toml.
+# The build command above generates + patches worker.js in .vercel/output/static/
+# Then wrangler deploy uploads worker.js as the Worker + .vercel/output/static
+# as ASSETS binding for static files + edge function module loading.
+[assets]
+directory = ".vercel/output/static"
+binding = "ASSETS"
 
 [build.environment]
 NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
