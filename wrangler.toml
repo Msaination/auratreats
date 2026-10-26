@@ -1,7 +1,8 @@
 # Cloudflare Pages config for Next.js
-# This project MUST be deployed as a PAGES project, NOT a Workers service.
-# next-on-pages generates _worker.js/ with dynamic import() for edge functions,
-# which only works in the Cloudflare Pages runtime.
+# IMPORTANT: In the Cloudflare dashboard, clear the "Deploy command" field.
+# Pages projects auto-deploy from pages_build_output_dir after build.
+# A custom Deploy command of "npx wrangler deploy" causes deployment to fail
+# because wrangler can't find main/assets configuration in the built output.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
