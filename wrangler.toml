@@ -10,7 +10,11 @@
 # natively supports the _worker.js/ directory that next-on-pages generates.
 #
 # ALSO: Ensure CLOUDFLARE_API_TOKEN has Pages:Edit permission.
-# Set as env var in dashboard (Settings → Environment variables), not in wrangler.toml.
+# In the Cloudflare API token editor, under "Account permissions":
+# - Find "Cloudflare Pages and Access" → set to "Edit"
+# (This is the Pages:Edit permission; the UI groups it with Access)
+# Set token as env var in dashboard (Settings → Environment variables).
+# A Pages project named "auratreats" must also exist in the Cloudflare dashboard.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
