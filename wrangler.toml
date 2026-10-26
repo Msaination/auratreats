@@ -1,10 +1,12 @@
 # Cloudflare Pages config for Next.js
 #
-# Cloudflare Dashboard settings:
-# - Build command: npx @cloudflare/next-on-pages@1
-# - Deploy command: npx wrangler pages deploy .vercel/output/static
+# IMPORTANT: Update Cloudflare dashboard settings:
+#   Build command: npx @cloudflare/next-on-pages@1
+#   Deploy command: npx wrangler pages deploy .vercel/output/static
 #   (NOT "npx wrangler deploy" — that's for Workers services)
-# - Root directory: /frontend
+#
+# The scripts/post-build.js is NOT needed — wrangler pages deploy
+# natively supports the _worker.js/ directory that next-on-pages generates.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
@@ -15,6 +17,8 @@ pages_build_output_dir = ".vercel/output/static"
 
 [build.environment]
 NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
+WORDPRESS_GRAPHQL_ENDPOINT = "https://spa.auraretreat.co.za/graphql"
+AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
 
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
