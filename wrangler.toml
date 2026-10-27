@@ -2,7 +2,7 @@
 #
 # Cloudflare Dashboard settings:
 #   Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
-#   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats
+#   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats --production-branch=main
 #   Root directory: /frontend
 #
 # Environment variables must be set in dashboard (Settings → Environment variables):
