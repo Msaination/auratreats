@@ -1,11 +1,11 @@
 # Cloudflare Pages config for Next.js
 #
-# IMPORTANT: Update Cloudflare dashboard settings:
+# Cloudflare Dashboard settings:
 #   Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
 #   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats
 #   Root directory: /frontend
 #
-# Environment variables must be set in the dashboard (Settings → Environment variables):
+# Environment variables must be set in dashboard (Settings → Environment variables):
 #   NEXT_PUBLIC_SENTRY_DSN, AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT, NEXT_PUBLIC_SITE_URL
 #
 # Compatibility settings in dashboard:
@@ -19,9 +19,9 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
 [vars]
-# These are RUNTIME env vars (available to the Worker at request time).
 # Build-time env vars (NEXT_PUBLIC_SENTRY_DSN, WORDPRESS_GRAPHQL_ENDPOINT,
 # AURA_API_URL) must be set in the Cloudflare dashboard (Settings →
 # Environment variables) since Pages wrangler.toml doesn't support [build.environment].
+# Runtime env vars can be listed here:
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
