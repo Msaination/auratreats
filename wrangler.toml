@@ -1,27 +1,38 @@
 # Cloudflare Pages config for Next.js
 #
-# Cloudflare Dashboard settings:
-#   Build command: npx @cloudflare/next-on-pages@1 && node scripts/post-build.js
-#   Deploy command: npx wrangler pages deploy .vercel/output/static --project-name=auratreats --production-branch=main
-#   Root directory: /frontend
+# Deployment workflow (two options):
 #
-# Environment variables must be set in dashboard (Settings → Environment variables):
-#   NEXT_PUBLIC_SENTRY_DSN, AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT, NEXT_PUBLIC_SITE_URL
+#  Option A — Dashboard-managed Pages project
+#    Set these in the Cloudflare Dashboard (Settings → Build settings):
+#      Build command: npx @cloudflare/next-on-pages@1
+#      Output directory: .vercel/output/static
+#    Environment variables (Settings → Environment variables):
+#      NEXT_PUBLIC_SENTRY_DSN, AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT,
+#      NEXT_PUBLIC_SITE_URL
+#    No [build] section is needed in wrangler.toml.
 #
-# Compatibility settings in dashboard:
-#   nodejs_compat flag, compatibility_date = "2026-10-25"
+#  Option B — Wrangler-managed Pages project
+#    Build command: npx @cloudflare/next-on-pages@1
+#    Deploy command: npm run deploy
+#    Root directory: /frontend
+#    `npm run deploy` creates the Pages project when it is absent, then
+#    deploys `.vercel/output/static`. The rm -rf cache guard is handled by
+#    the npm "prebuild" script.
 #
-# NOTE: Pages projects do NOT support [build], [build.environment], or [assets]
-# sections in wrangler.toml. These settings are only for Workers projects.
+# Compatibility:
+#   nodejs_compat flag is required for the Node.js process.env shim and
+#   AsyncLocalStorage that @cloudflare/next-on-pages generates.
 name = "auratreats"
 compatibility_date = "2026-10-25"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
 [vars]
-# Build-time env vars (NEXT_PUBLIC_SENTRY_DSN, WORDPRESS_GRAPHQL_ENDPOINT,
-# AURA_API_URL) must be set in the Cloudflare dashboard (Settings →
-# Environment variables) since Pages wrangler.toml doesn't support [build.environment].
-# Runtime env vars can be listed here:
+# Runtime environment variables. On Cloudflare Pages, dashboard environment
+# variables override these values at runtime. For wrangler pages dev, these
+# provide the defaults locally. NEXT_PUBLIC_SENTRY_DSN is inlined at build
+# time and should also be set in the dashboard for production builds.
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
+NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
+WORDPRESS_GRAPHQL_ENDPOINT = "https://spa.auraretreat.co.za/graphql"
