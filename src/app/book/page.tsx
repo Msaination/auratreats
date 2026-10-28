@@ -24,10 +24,19 @@ export default async function BookPage({ searchParams }: BookPageProps) {
     ? params.category[0]
     : params.category;
   const initialCategory = requestedCategory === "packages" ? "packages" : undefined;
-  const [catalog, packageCatalog] = await Promise.all([
-    getServiceCatalog().catch(() => null),
-    getPackageCatalog().catch(() => null),
+  const [catalogResult, packageResult] = await Promise.allSettled([
+    getServiceCatalog(),
+    getPackageCatalog(),
   ]);
+  const catalog = catalogResult.status === "fulfilled" ? catalogResult.value : null;
+  const packageCatalog =
+    packageResult.status === "fulfilled" ? packageResult.value : null;
+  const catalogError =
+    catalogResult.status === "rejected"
+      ? catalogResult.reason instanceof Error
+        ? catalogResult.reason.message
+        : String(catalogResult.reason)
+      : null;
 
   return (
     <main className="booking-flow min-h-screen bg-[#f3eee9] text-[#352d2a]">
@@ -77,6 +86,11 @@ export default async function BookPage({ searchParams }: BookPageProps) {
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#746760]">
               We could not reach the booking service. Please refresh the page in a moment.
             </p>
+            {catalogError && (
+              <p className="mx-auto mt-3 max-w-md break-words font-mono text-xs leading-5 text-[#9a4d45]">
+                {catalogError}
+              </p>
+            )}
           </section>
         )}
       </div>
