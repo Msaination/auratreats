@@ -1,10 +1,8 @@
 import { spawnSync } from "node:child_process";
+import { ensurePagesProject } from "./ensure-pages-project.mjs";
 
-const projectName = "auratreats";
-const productionBranch = "main";
 const outputDirectory = ".vercel/output/static";
-const compatibilityDate = "2026-10-25";
-const compatibilityFlags = ["nodejs_compat"];
+const projectName = "auratreats";
 
 function runWrangler(args) {
   const result = spawnSync("npx", ["wrangler", ...args], {
@@ -19,26 +17,9 @@ function runWrangler(args) {
   return result.status ?? 1;
 }
 
-console.log(`Ensuring Cloudflare Pages project "${projectName}" exists...`);
-
-const createStatus = runWrangler([
-  "pages",
-  "project",
-  "create",
-  projectName,
-  "--production-branch",
-  productionBranch,
-  "--compatibility-date",
-  compatibilityDate,
-  ...compatibilityFlags.flatMap((flag) => ["--compatibility-flag", flag]),
-]);
-
-if (createStatus === 0) {
-  console.log(`Created Cloudflare Pages project "${projectName}".`);
-} else {
-  console.log(
-    `Could not create "${projectName}"; continuing in case the project already exists.`,
-  );
+const ensureStatus = ensurePagesProject();
+if (ensureStatus !== 0) {
+  process.exit(ensureStatus);
 }
 
 console.log(`Deploying ${outputDirectory} to Cloudflare Pages...`);

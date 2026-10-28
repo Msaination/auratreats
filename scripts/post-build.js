@@ -1,7 +1,14 @@
-// This file is a no-op placeholder.
 // The Cloudflare dashboard's Build command may reference "node scripts/post-build.js".
-// The separate deployment workflow lives in scripts/deploy-pages.mjs, which
-// ensures the Pages project exists before deploying the output directory.
-// This script exists only to prevent "Cannot find module" errors if the
-// dashboard Build command includes it.
-console.log("post-build.js: no-op");
+// Ensure the Pages project exists even when the platform invokes Wrangler
+// directly instead of `npm run deploy`.
+import("./ensure-pages-project.mjs")
+  .then(({ ensurePagesProject }) => {
+    const status = ensurePagesProject();
+    if (status !== 0) {
+      process.exit(status);
+    }
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

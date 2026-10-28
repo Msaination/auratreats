@@ -16,8 +16,8 @@
 #    Deploy command: npm run deploy
 #    Root directory: /frontend
 #    `npm run deploy` creates the Pages project when it is absent, then
-#    deploys `.vercel/output/static`. The rm -rf cache guard is handled by
-#    the npm "prebuild" script.
+#    deploys `.vercel/output/static`. The build's post-build hook performs the
+#    same project check for platforms that invoke Wrangler directly.
 #
 # Compatibility:
 #   nodejs_compat flag is required for the Node.js process.env shim and
