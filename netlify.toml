@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Ensure devDependencies are installed during build (Netlify may default to
+  # NODE_ENV=production which omits devDependencies). Without this, Next.js
+  # cannot resolve @tailwindcss/postcss and @/ path aliases configured in
+  # tsconfig.json (TypeScript must be present for path-alias resolution).
+  NPM_FLAGS = "--include=dev"

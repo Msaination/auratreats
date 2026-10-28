@@ -1,0 +1,13 @@
+# macOS artifacts
+.DS_Store
+**/._*
+*/.DS_Store
+
+# Local-only env files (Vercel respects .gitignore by default, but this
+# ensures they are never picked up during builds)
+.env.local
+.env*.local
+
+# Build artifacts
+.next
+.vercel
