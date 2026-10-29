@@ -2,6 +2,19 @@ const apiBaseUrl =
   process.env.AURA_API_URL ??
   "https://spa.auraretreat.co.za/wp-json/aura/v1";
 
+async function fetchAura(path: string): Promise<Response> {
+  const secureUrl = `${apiBaseUrl.replace(/\/$/, "")}${path}`;
+  const request = {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "User-Agent":
+        "Mozilla/5.0 (compatible; AuraSpaBooking/1.0; +https://auratreats.pages.dev)",
+    },
+  } as const;
+  return fetch(secureUrl, request);
+}
+
 export type ServiceDuration = {
   id: string;
   name: string;
@@ -165,12 +178,7 @@ export type ReviewCatalog = {
 };
 
 export async function getPackageCatalog(): Promise<PackageCatalog> {
-  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/packages`, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  const response = await fetchAura("/packages");
 
   if (!response.ok) {
     throw new Error(`Aura packages request failed: ${response.status}`);
@@ -189,15 +197,7 @@ export async function getPaymentMethods(
   type: "appointment" | "package" = "appointment",
 ): Promise<PaymentMethod[]> {
   const params = new URLSearchParams({ type });
-  const response = await fetch(
-    `${apiBaseUrl.replace(/\/$/, "")}/payment-methods?${params}`,
-    {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-    },
-    },
-  );
+  const response = await fetchAura(`/payment-methods?${params}`);
 
   if (!response.ok) {
     throw new Error(`Aura payment methods request failed: ${response.status}`);
@@ -213,12 +213,7 @@ export async function getPaymentMethods(
 }
 
 export async function getServiceCatalog(): Promise<ServiceCatalog> {
-  const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/services`, {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  const response = await fetchAura("/services");
 
   if (!response.ok) {
     const responseText = await response.text().catch(() => "");
@@ -243,15 +238,7 @@ export async function getServiceCatalog(): Promise<ServiceCatalog> {
 export async function getTherapistCatalog(
   serviceId: number,
 ): Promise<TherapistCatalog> {
-  const response = await fetch(
-    `${apiBaseUrl.replace(/\/$/, "")}/services/${serviceId}/therapists`,
-    {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
+  const response = await fetchAura(`/services/${serviceId}/therapists`);
 
   if (!response.ok) {
     throw new Error(`Aura therapists request failed: ${response.status}`);
@@ -291,15 +278,7 @@ export async function getAvailability({
     startDate,
     days: String(days),
   });
-  const response = await fetch(
-    `${apiBaseUrl.replace(/\/$/, "")}/availability?${params}`,
-    {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
+  const response = await fetchAura(`/availability?${params}`);
 
   if (!response.ok) {
     throw new Error(`Aura availability request failed: ${response.status}`);
@@ -321,15 +300,7 @@ export async function getAvailability({
 }
 
 export async function getCustomerFields(): Promise<CustomerFieldCatalog> {
-  const response = await fetch(
-    `${apiBaseUrl.replace(/\/$/, "")}/customer-fields`,
-    {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
+  const response = await fetchAura("/customer-fields");
 
   if (!response.ok) {
     throw new Error(`Aura customer fields request failed: ${response.status}`);
@@ -352,15 +323,7 @@ export async function getReview(
     serviceId: String(serviceId),
     duration: String(duration),
   });
-  const response = await fetch(
-    `${apiBaseUrl.replace(/\/$/, "")}/review?${params}`,
-    {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
+  const response = await fetchAura(`/review?${params}`);
 
   if (!response.ok) {
     throw new Error(`Aura review request failed: ${response.status}`);
