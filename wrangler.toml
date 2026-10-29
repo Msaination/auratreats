@@ -7,8 +7,7 @@
 #      Build command: npx @cloudflare/next-on-pages@1
 #      Output directory: .vercel/output/static
 #    Environment variables (Settings → Environment variables):
-#      NEXT_PUBLIC_SENTRY_DSN, AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT,
-#      NEXT_PUBLIC_SITE_URL
+#      AURA_API_URL, WORDPRESS_GRAPHQL_ENDPOINT, NEXT_PUBLIC_SITE_URL
 #    No [build] section is needed in wrangler.toml.
 #
 #  Option B — Wrangler-managed Pages project
@@ -30,9 +29,19 @@ pages_build_output_dir = ".vercel/output/static"
 [vars]
 # Runtime environment variables. On Cloudflare Pages, dashboard environment
 # variables override these values at runtime. For wrangler pages dev, these
-# provide the defaults locally. NEXT_PUBLIC_SENTRY_DSN is inlined at build
-# time and should also be set in the dashboard for production builds.
+# provide the defaults locally.
+#
+# NOTE: NEXT_PUBLIC_SENTRY_DSN is intentionally NOT set here. The @sentry/nextjs
+# SDK auto-injects init code into edge function bundles when NEXT_PUBLIC_SENTRY_DSN
+# is present, which crashes route handlers (500) on Cloudflare Pages because the
+# SDK accesses process.env without typeof guards. To use Sentry, either:
+#   a) Enable `nodejs_compat` (already listed above) AND configure Sentry via
+#      withSentryConfig in next.config.mjs — OR
+#   b) Set NEXT_PUBLIC_SENTRY_DSN only as a dashboard env var, not in [vars]
 NEXT_PUBLIC_SITE_URL = "https://spa.auraretreat.co.za"
-NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
+# Disabled: @sentry/nextjs auto-inits Sentry in edge bundles, crashing route
+# handlers on Cloudflare Pages without proper node_compat + withSentryConfig.
+# Re-add with proper withSentryConfig + edge-safe setup.
+# NEXT_PUBLIC_SENTRY_DSN = "https://33705ef97e79dbbcc9d2e3a36b2edb1d@o4512234868178944.ingest.us.sentry.io/4512234903437312"
 AURA_API_URL = "https://spa.auraretreat.co.za/wp-json/aura/v1"
 WORDPRESS_GRAPHQL_ENDPOINT = "https://spa.auraretreat.co.za/graphql"

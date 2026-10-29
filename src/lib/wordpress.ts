@@ -7,12 +7,17 @@ type GraphQLResponse<T> = {
   errors?: GraphQLError[];
 };
 
-const endpoint =
-  process.env.WORDPRESS_GRAPHQL_ENDPOINT ??
-  "https://spa.auraretreat.co.za/graphql"; 
+const productionGraphqlEndpoint = "https://spa.auraretreat.co.za/graphql";
+
+function getGraphqlEndpoint() {
+  if (typeof process !== "undefined") {
+    return process.env?.WORDPRESS_GRAPHQL_ENDPOINT ?? productionGraphqlEndpoint;
+  }
+  return productionGraphqlEndpoint;
+}
 
 export async function wordpressQuery<T>(query: string): Promise<T> {
-  const response = await fetch(endpoint, {
+  const response = await fetch(getGraphqlEndpoint(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

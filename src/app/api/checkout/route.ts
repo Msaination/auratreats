@@ -1,9 +1,8 @@
 export const runtime = "edge";
 import { NextResponse } from "next/server";
+import { getApiBaseUrl } from "@/lib/latepoint";
 
-const apiBaseUrl =
-  process.env.AURA_API_URL ??
- "https://spa.auraretreat.co.za/wp-json/aura/v1";
+const getCheckoutApiUrl = () => getApiBaseUrl().replace(/\/$/, "");
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await fetch(
-      `${apiBaseUrl.replace(/\/$/, "")}/checkout-intents`,
+      `${getCheckoutApiUrl()}/checkout-intents`,
       {
         method: "POST",
         cache: "no-store",

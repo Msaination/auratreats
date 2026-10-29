@@ -5,8 +5,16 @@ function getApiBaseUrl() {
     return productionApiBaseUrl;
   }
 
-  return process.env.AURA_API_URL ?? productionApiBaseUrl;
+  // Guard for edge runtime without nodejs_compat (CommonJS process polyfilled
+  // by Next.js for RSC but not always available in route-handler Workers).
+  if (typeof process !== "undefined") {
+    return process.env?.AURA_API_URL ?? productionApiBaseUrl;
+  }
+
+  return productionApiBaseUrl;
 }
+
+export { getApiBaseUrl, productionApiBaseUrl };
 
 async function fetchAura(path: string): Promise<Response> {
   const secureUrl = `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
