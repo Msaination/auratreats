@@ -221,7 +221,14 @@ export async function getServiceCatalog(): Promise<ServiceCatalog> {
   });
 
   if (!response.ok) {
-    throw new Error(`Aura services request failed: ${response.status}`);
+    const responseText = await response.text().catch(() => "");
+    const responseDetails = responseText
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 600);
+    throw new Error(
+      `Aura services request failed: ${response.status}${responseDetails ? ` — ${responseDetails}` : ""}`,
+    );
   }
 
   const catalog = (await response.json()) as Partial<ServiceCatalog>;
