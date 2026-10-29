@@ -10,6 +10,8 @@ async function fetchAura(path: string): Promise<Response> {
       Accept: "application/json",
       "User-Agent":
         "Mozilla/5.0 (compatible; AuraSpaBooking/1.0; +https://auratreats.pages.dev)",
+      Origin: "https://auratreats.pages.dev",
+      Referer: "https://auratreats.pages.dev/book",
     },
   } as const;
   return fetch(secureUrl, request);
