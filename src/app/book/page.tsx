@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 export const runtime = "edge";
 import { BookingHeader } from "./booking-header";
 import { BookingProgress } from "./progress";
+import { ServiceCatalogLoader } from "./service-catalog-loader";
 import { ServiceSelector } from "./service-selector";
 import { getPackageCatalog, getServiceCatalog } from "@/lib/latepoint";
 
@@ -24,19 +25,10 @@ export default async function BookPage({ searchParams }: BookPageProps) {
     ? params.category[0]
     : params.category;
   const initialCategory = requestedCategory === "packages" ? "packages" : undefined;
-  const [catalogResult, packageResult] = await Promise.allSettled([
-    getServiceCatalog(),
-    getPackageCatalog(),
+  const [catalog, packageCatalog] = await Promise.all([
+    getServiceCatalog().catch(() => null),
+    getPackageCatalog().catch(() => null),
   ]);
-  const catalog = catalogResult.status === "fulfilled" ? catalogResult.value : null;
-  const packageCatalog =
-    packageResult.status === "fulfilled" ? packageResult.value : null;
-  const catalogError =
-    catalogResult.status === "rejected"
-      ? catalogResult.reason instanceof Error
-        ? catalogResult.reason.message
-        : String(catalogResult.reason)
-      : null;
 
   return (
     <main className="booking-flow min-h-screen bg-[#f3eee9] text-[#352d2a]">
@@ -81,17 +73,7 @@ export default async function BookPage({ searchParams }: BookPageProps) {
             initialCategory={initialCategory}
           />
         ) : (
-          <section className="booking-radius border border-[#d9c9bf] bg-[#faf6f3] py-16 text-center shadow-[0_18px_40px_rgba(90,72,64,0.04)]">
-            <h2 className="font-serif text-3xl text-[#352d2a]">Treatments are unavailable</h2>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#746760]">
-              We could not reach the booking service. Please refresh the page in a moment.
-            </p>
-            {catalogError && (
-              <p className="mx-auto mt-3 max-w-md break-words font-mono text-xs leading-5 text-[#9a4d45]">
-                {catalogError}
-              </p>
-            )}
-          </section>
+          <ServiceCatalogLoader initialCategory={initialCategory} />
         )}
       </div>
     </main>

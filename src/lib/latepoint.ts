@@ -1,9 +1,15 @@
-const apiBaseUrl =
-  process.env.AURA_API_URL ??
-  "https://spa.auraretreat.co.za/wp-json/aura/v1";
+const productionApiBaseUrl = "https://spa.auraretreat.co.za/wp-json/aura/v1";
+
+function getApiBaseUrl() {
+  if (typeof window !== "undefined") {
+    return productionApiBaseUrl;
+  }
+
+  return process.env.AURA_API_URL ?? productionApiBaseUrl;
+}
 
 async function fetchAura(path: string): Promise<Response> {
-  const secureUrl = `${apiBaseUrl.replace(/\/$/, "")}${path}`;
+  const secureUrl = `${getApiBaseUrl().replace(/\/$/, "")}${path}`;
   const request = {
     cache: "no-store",
     headers: {
